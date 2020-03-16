@@ -17,8 +17,7 @@ USAGE='''Commands (*requres superuser priveleges):
 HOSTS='''
 127.0.0.1	localhost
 ::1			localhost
-127.0.0.1	hostname.localdomain	hostname
-127.0.1.1	thishost.mydomain.org  thishost
+127.0.1.1	myhostname.localdomain  myhostname
 '''
 
 function checkEFI() {
