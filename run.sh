@@ -1,16 +1,19 @@
 #!/bin/bash
 
-USAGE='''Commands (*requres superuser priveleges):
+USAGE='''Commands:
 	checkEFI
 	checkInternet
 	setWifi
 	setClock
-	*partitionDisk <disk> <bootSize> <rootSize> <swapSize> <homeSize>
+	partitionDisk <disk> <bootSize> <rootSize> <swapSize> <homeSize>
 		defaults[GB]: 1 boot, 20 root, 12 swap, rest of filesystem home
-	*formatAndMount <partitionIdentifier>
+	format <partitionIdentifier>
+		example: for partition /dev/sda1, partitionIdentifier=sda
+	mountInstall <partitionIdentifier>
 		example: for partition /dev/sda1, partitionIdentifier=sda
 	install
-	misc <hostname> <city>
+	enterSys
+	sysSetup <hostname> <city>
 		defaults: UA, Detroit
 	reboot'''
 
@@ -42,7 +45,7 @@ function setWifi() {
 	echo "now run sudo netctl start <service>"
 }
 
-function formatAndMount() {
+function format() {
 	part="${1}"
 
 	# formatting
@@ -51,6 +54,10 @@ function formatAndMount() {
 	mkswap /dev/${part}3
 	swapon /dev/${part}3
 	mkfs.ext4 /dev/${part}4
+}
+
+function mountInstall() {
+	part="${1}"
 
 	# mounting
 	mount /dev/${part}2 /mnt
@@ -93,16 +100,21 @@ case "${1}" in
 	"partitionDisk")
 		./partitioning.sh "${2}" "${3}" "${4}" "${5}" "${6}"
 		;;
-	"formatAndMount")
-		formatAndMount "${2}"
+	"format")
+		format "${2}"
+		;;
+	"mountInstall")
+		mountInstall "${2}"
 		;;
 	"install")
 		pacman -Syy
 		pacstrap /mnt base base-devel linux linux-firmware efibootmgr vim git dhcpcd dhclient networkmanager man-db man-pages sudo openssh grub netctl dialog python3 python-pip xonsh i3-gaps xorg-xinit xorg-server picom lxappearance pcmanfm code unclutter konsole firefox
 		;;
-	"misc")
+	"enterSys")
 		genfstab -U /mnt >> /mnt/etc/fstab
 		arch-chroot /mnt # chroot into the system
+		;;
+	"sysSetup")
 		userSetup "${2}" "${3}"
 
 		appendHosts
