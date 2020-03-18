@@ -96,6 +96,7 @@ case "${1}" in
 		;;
 	"setClock")
 		timedatectl set-ntp true
+		timedatectl set-timezone America/Detroit
 		;;
 	"partitionDisk")
 		./partitioning.sh "${2}" "${3}" "${4}" "${5}" "${6}"
