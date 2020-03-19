@@ -4,6 +4,7 @@ USAGE='''Commands:
 	reset
 	partition
 	format
+	mounting
 	install
 	enterSys'''
 
@@ -55,14 +56,17 @@ lvcreate -L "${swapSize}" "${vol}" -n swap
 lvcreate -l 100%FREE "${vol}" -n root
 
 mkfs.ext4 "${root}"
-mount "${root}" /mnt
 
 mkfs.fat -F32 "${efi}"
-mkdir "${bootDir}"
-mount "${efi}" "${bootDir}"
 
 mkswap "${swap}"
 swapon "${swap}"
+}
+
+function mounting() {
+mount "${root}" /mnt
+mkdir "${bootDir}"
+mount "${efi}" "${bootDir}"
 }
 
 case "${1}" in
@@ -74,6 +78,9 @@ case "${1}" in
 		;;
 	"format")
 		format
+		;;
+	"mounting")
+		mounting
 		;;
 	"install")
 		pacman -Syy
