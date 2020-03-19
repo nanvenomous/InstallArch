@@ -45,7 +45,6 @@ sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk "${disk}"
 	q # and we're done
 EOF
 partprobe "${disk}"
-lsblk
 }
 
 function format() {
