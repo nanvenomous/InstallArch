@@ -1,8 +1,8 @@
 #!/bin/bash
 
 disk='/dev/nvme0n1'
-efi="${disk}/p1"
-system="${disk}/p2"
+efi="${disk}p1"
+system="${disk}p2"
 vol='vg0'
 swapSize='16G'
 root="/dev/${vol}/root"
