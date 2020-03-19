@@ -1,9 +1,19 @@
 #!/bin/bash
 
-vgremove vg0
+disk='/dev/nvme0n1'
+efi="${disk}/p1"
+system="${disk}/p2"
+vol='vg0'
+swapSize='16G'
+root="/dev/${vol}/root"
+swap="/dev/${vol}/swap"
+bootDir="/mnt/boot"
 
+vgremove "${vol}"
 
-sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk /dev/nvme0n1
+umount -R /mnt
+
+sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk "${disk}"
 	g # clear the in memory partition table
 	n # new boot partition
 	1 # partition number 1
@@ -19,3 +29,19 @@ sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk /dev/nvme0n1
 	w # write the partition table
 	q # and we're done
 EOF
+
+pvcreate "${system}"
+vgcreate "${vol}" "${system}"
+
+lvcreate -L "${swapSize}" "${vol}" -n swap
+lvcreate -l 100%FREE "${vol}" -n root
+
+mkfs.ext4 "${root}"
+mount "${root}" /mnt
+
+mkfs.fat -F32 "${efi}"
+mkdir "${bootDir}"
+mount "${efi}" "${bootDir}"
+
+mkswap "${swap}"
+swapon "${swap}"
