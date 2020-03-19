@@ -29,6 +29,7 @@ sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk "${disk}"
 	w # write the partition table
 	q # and we're done
 EOF
+partprobe "${disk}"
 
 pvcreate "${system}"
 vgcreate "${vol}" "${system}"
