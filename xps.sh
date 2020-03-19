@@ -19,6 +19,12 @@ bootDir="/mnt/boot"
 function reset() {
 vgremove "${vol}"
 umount -R /mnt
+
+sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk "${disk}"
+	g # clear the in memory partition table
+	w # write the partition table
+	q # and we're done
+EOF
 }
 
 function partition() {
