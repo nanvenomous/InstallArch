@@ -1,5 +1,12 @@
 #!/bin/bash
 
+USAGE='''Commands:
+	reset
+	partition
+	format
+	install
+	enterSys'''
+
 disk='/dev/nvme0n1'
 efi="${disk}p1"
 system="${disk}p2"
@@ -9,10 +16,12 @@ root="/dev/${vol}/root"
 swap="/dev/${vol}/swap"
 bootDir="/mnt/boot"
 
+function reset() {
 vgremove "${vol}"
-
 umount -R /mnt
+}
 
+function partition() {
 sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk "${disk}"
 	g # clear the in memory partition table
 	n # new boot partition
@@ -30,7 +39,10 @@ sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk "${disk}"
 	q # and we're done
 EOF
 partprobe "${disk}"
+lsblk
+}
 
+function format() {
 pvcreate "${system}"
 vgcreate "${vol}" "${system}"
 
@@ -46,3 +58,27 @@ mount "${efi}" "${bootDir}"
 
 mkswap "${swap}"
 swapon "${swap}"
+}
+
+case "${1}" in
+	"reset")
+		reset
+		;;
+	"partition")
+		partition
+		;;
+	"format")
+		format
+		;;
+	"install")
+		pacman -Syy
+		pacstrap /mnt base base-devel linux linux-firmware efibootmgr vim git dhcpcd dhclient networkmanager man-db man-pages sudo openssh grub netctl dialog python3 python-pip xonsh i3-gaps xorg-xinit xorg-server picom lxappearance pcmanfm code unclutter konsole firefox
+		;;
+	"enterSys")
+		genfstab -U /mnt >> /mnt/etc/fstab
+		arch-chroot /mnt # chroot into the system
+		;;
+	*)
+		echo "${USAGE}"
+		;;
+esac
