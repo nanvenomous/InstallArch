@@ -153,7 +153,7 @@ case "${1}" in
 		echo "efibootmgr -o 0002,0001,0003"
 		;;
 	"grubSetup")
-		grub-install
+		grub-install --target=x86_64-efi --efi-directory=/boot/efi
 		grub-mkconfig -o /boot/grub/grub.cfg
 		;;
 	"prepareReboot")
