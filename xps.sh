@@ -9,7 +9,10 @@ USAGE='''Commands:
 	update
 	install
 	enterSys
-	internalInstall'''
+	internalInstall
+	sysSetup
+	grubSetup
+	rebootAfterExit'''
 
 disk='/dev/nvme0n1'
 efi="${disk}p1"
@@ -21,6 +24,16 @@ root="/dev/${vol}/root"
 swap="/dev/${vol}/swap"
 bootDir="/mnt/boot"
 efiDir="/mnt/boot/efi"
+hostname="ua"
+username="deku"
+city='Detroit'
+
+HOSTS=$(cat <<-END
+127.0.0.1	localhost
+::1		localhost
+127.0.1.1	${hostname}.localdomain  ${hostname}
+END
+)
 
 function setupGit() {
 git config --global user.email "mrgarelli@gmail.com"
@@ -107,7 +120,7 @@ case "${1}" in
 		pacman -Sy archlinux-keyring
 		;;
 	"install")
-		pacstrap /mnt base base-devel linux linux-firmware efibootmgr grub
+		pacstrap /mnt base base-devel linux linux-firmware efibootmgr grub networkmanager
 		;;
 	"enterSys")
 		genfstab -U /mnt >> /mnt/etc/fstab
@@ -115,6 +128,32 @@ case "${1}" in
 		;;
 	"internalInstall")
 		pacman -Sy vim git dhcpcd dhclient networkmanager man-db man-pages sudo openssh netctl dialog python3 python-pip xonsh i3-gaps xorg-xinit xorg-server picom lxappearance pcmanfm code unclutter konsole firefox
+		;;
+	"sysSetup")
+		ln -sf /usr/share/zoneinfo/America/${city} /etc/localtime
+		hwclock --systohc
+
+		echo "${hostname}" > /etc/hostname
+
+		echo "LANG=en_US>UTF-8" >> /etc/local.conf
+		locale-gen
+
+		echo "${HOSTS}" >> /etc/hosts
+
+		systemctl enable NetworkManager
+		passwd
+
+		useradd -m -g users -Gwheel "${username}"
+		passwd "${username}"
+		;;
+	"grubSetup")
+		grub-install
+		grub-mkconfig -o /boot/grub/grub.cfg
+		;;
+	"rebootAfterExit")
+		umount -R /mnt
+		swapoff -a
+		reboot
 		;;
 	*)
 		echo "${USAGE}"
