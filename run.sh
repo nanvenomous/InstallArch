@@ -23,32 +23,26 @@ USAGE='''Commands:
 	grubSetup
 	prepareReboot'''
 
-HOSTS='''
-127.0.0.1	localhost
-::1			localhost
-127.0.1.1	myhostname.localdomain  myhostname
-'''
-
 function checkEFI() {
-	if [[ $(ls '/sys/firmware/efi/efivars' &>/dev/null; echo $?) -eq 0 ]]; then
-		echo 'This is an EFI system.'
-	else
-		echo 'This is not an EFI system. This guide does not apply :('
-	fi
+if [[ $(ls '/sys/firmware/efi/efivars' &>/dev/null; echo $?) -eq 0 ]]; then
+	echo 'This is an EFI system.'
+else
+	echo 'This is not an EFI system. This guide does not apply :('
+fi
 }
 
 function checkInternet() {
-	ping -q -c 1 google.com &>/dev/null
-	if [[ $? -ne 0 ]]; then
-		echo 'There is no internet.'
-	else
-		echo 'There is internet! Skip setWifi command.'
-	fi
+ping -q -c 1 google.com &>/dev/null
+if [[ $? -ne 0 ]]; then
+	echo 'There is no internet.'
+else
+	echo 'There is internet! Skip setWifi command.'
+fi
 }
 
 function setWifi() {
-	wifi-menu
-	echo "now run sudo netctl start <service>"
+wifi-menu
+echo "now run sudo netctl start <service>"
 }
 
 function reset() {
@@ -63,36 +57,47 @@ EOF
 }
 
 function format() {
-	part="${1}"
+part="${1}"
 
-	# formatting
-	mkfs.fat -F32 /dev/${part}1
-	mkfs.ext4 /dev/${part}2
-	mkswap /dev/${part}3
-	mkfs.ext4 /dev/${part}4
+# formatting
+mkfs.fat -F32 /dev/${part}1
+mkfs.ext4 /dev/${part}2
+mkswap /dev/${part}3
+mkfs.ext4 /dev/${part}4
 }
 
 function mounting() {
-	part="${1}"
+part="${1}"
 
-	# mounting
-	mount /dev/${part}2 /mnt
-	mkdir -p /mnt/boot
-	mkdir -p /mnt/boot/efi
-	mount /dev/${part}1 /mnt/boot/efi
-	mkdir -p /mnt/home
-	mount /dev/${part}4 /mnt/home
-	swapon /dev/${part}3
+# mounting
+mount /dev/${part}2 /mnt
+mkdir -p /mnt/boot
+mkdir -p /mnt/boot/efi
+mount /dev/${part}1 /mnt/boot/efi
+mkdir -p /mnt/home
+mount /dev/${part}4 /mnt/home
+swapon /dev/${part}3
 }
 
 function userSetup() {
-	HOSTNM="${1}"
-	CITY="${2}"
-	ln -sf /usr/share/zoneinfo/America/${CITY:=Detroit} /etc/localtime
-	hwclock --systohc
-	echo "LANG=en_US>UTF-8" > /etc/local.conf
-	locale-gen
-	echo "${HOSTNM:=UA}" > /etc/hostname
+HOSTNM="${1}"
+CITY="${2}"
+ln -sf /usr/share/zoneinfo/America/${CITY} /etc/localtime
+hwclock --systohc
+echo "LANG=en_US>UTF-8" > /etc/local.conf
+locale-gen
+echo "${HOSTNM}" > /etc/hostname
+}
+
+function hostSetup() {
+hostname="${1}"
+HOSTS=$(cat <<-END
+127.0.0.1	localhost
+::1		localhost
+127.0.1.1	${hostname}.localdomain  ${hostname}
+END
+)
+echo "${HOSTS}" >> /etc/hosts
 }
 
 case "${1}" in
@@ -139,10 +144,10 @@ case "${1}" in
 		pacman -Sy vim git dhcpcd dhclient networkmanager man-db man-pages sudo openssh netctl dialog python3 python-pip xonsh i3-gaps xorg-xinit xorg-server picom lxappearance pcmanfm code unclutter konsole firefox
 		;;
 	"sysSetup")
-		userSetup "${2}" "${3}"
-
-		echo "${HOSTS}" >> /etc/hosts
-
+		hostname="${2}"
+		city="${3}"
+		userSetup "${hostname:=ua}" "${city:=Detroit}"
+		hostSetup "${hostname:=ua}"
 
 		systemctl enable NetworkManager
 		passwd
