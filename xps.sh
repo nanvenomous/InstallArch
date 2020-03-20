@@ -12,7 +12,7 @@ USAGE='''Commands:
 	internalInstall
 	sysSetup
 	grubSetup
-	rebootAfterExit'''
+	prepareReboot'''
 
 disk='/dev/nvme0n1'
 efi="${disk}p1"
@@ -150,10 +150,9 @@ case "${1}" in
 		grub-install
 		grub-mkconfig -o /boot/grub/grub.cfg
 		;;
-	"rebootAfterExit")
+	"prepareReboot")
 		umount -R /mnt
 		swapoff -a
-		reboot
 		;;
 	*)
 		echo "${USAGE}"
