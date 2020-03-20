@@ -12,11 +12,16 @@ USAGE='''Commands:
 		example: for partition /dev/sda1, partitionIdentifier=sda
 	mounting <partitionIdentifier>
 		example: for partition /dev/sda1, partitionIdentifier=sda
+	update
 	install
+	tab
 	enterSys
+	internalInstall
 	sysSetup <hostname> <city>
 		defaults: UA, Detroit
-	reboot'''
+	bootOrder
+	grubSetup
+	prepareReboot'''
 
 HOSTS='''
 127.0.0.1	localhost
@@ -122,13 +127,21 @@ case "${1}" in
 	"mounting")
 		mounting "${2}"
 		;;
-	"install")
+	"update")
 		pacman -Syy
-		pacstrap /mnt base base-devel linux linux-firmware efibootmgr vim git dhcpcd dhclient networkmanager man-db man-pages sudo openssh grub netctl dialog python3 python-pip xonsh i3-gaps xorg-xinit xorg-server picom lxappearance pcmanfm code unclutter konsole firefox
+		pacman -Sy archlinux-keyring
+		;;
+	"install")
+		pacstrap /mnt base base-devel linux linux-firmware efibootmgr grub networkmanager
+		;;
+	"tab")
+		genfstab -U /mnt >> /mnt/etc/fstab
 		;;
 	"enterSys")
-		genfstab -U /mnt >> /mnt/etc/fstab
 		arch-chroot /mnt # chroot into the system
+		;;
+	"internalInstall")
+		pacman -Sy vim git dhcpcd dhclient networkmanager man-db man-pages sudo openssh netctl dialog python3 python-pip xonsh i3-gaps xorg-xinit xorg-server picom lxappearance pcmanfm code unclutter konsole firefox
 		;;
 	"sysSetup")
 		userSetup "${2}" "${3}"
@@ -137,13 +150,20 @@ case "${1}" in
 
 		systemctl enable NetworkManager
 		passwd
-		grub-install --target=x86_64-efi --efi-directory=/boot/efi
-		grub-mkconfig -o /boot/grub/grub.cfg
-		exit
-		umount -R /mnt
 		;;
-	"reboot")
-		reboot
+	"bootOrder")
+		efibootmgr -v
+		echo "To change the boot order use:"
+		echo "efibootmgr -o 0002,0001,0003"
+		;;
+	"grubSetup")
+		grub-install --target=x86_64-efi --efi-directory=/boot/efi
+		efibootmgr -c -d "${disk}" -p 1 -L ArchLinux -l /EFI/arch/grubx64.efi
+		grub-mkconfig -o /boot/grub/grub.cfg
+		;;
+	"prepareReboot")
+		umount -R /mnt
+		swapoff -a
 		;;
 	*)
 		echo "${USAGE}"
