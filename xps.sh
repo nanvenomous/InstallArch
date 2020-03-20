@@ -88,7 +88,6 @@ mkfs.ext4 "${boot}"
 mkfs.ext4 "${root}"
 
 mkswap "${swap}"
-swapon "${swap}"
 }
 
 function mounting() {
@@ -97,6 +96,7 @@ mkdir "${bootDir}"
 mount "${boot}" "${bootDir}"
 mkdir "${efiDir}"
 mount "${efi}" "${efiDir}"
+swapon "${swap}"
 }
 
 case "${1}" in
