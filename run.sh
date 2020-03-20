@@ -10,7 +10,7 @@ USAGE='''Commands:
 		defaults[GB]: 1 boot, 20 root, 12 swap, rest of filesystem home
 	format <partitionIdentifier>
 		example: for partition /dev/sda1, partitionIdentifier=sda
-	mountInstall <partitionIdentifier>
+	mounting <partitionIdentifier>
 		example: for partition /dev/sda1, partitionIdentifier=sda
 	install
 	enterSys
@@ -67,7 +67,7 @@ function format() {
 	mkfs.ext4 /dev/${part}4
 }
 
-function mountInstall() {
+function mounting() {
 	part="${1}"
 
 	# mounting
@@ -119,8 +119,8 @@ case "${1}" in
 	"format")
 		format "${2}"
 		;;
-	"mountInstall")
-		mountInstall "${2}"
+	"mounting")
+		mounting "${2}"
 		;;
 	"install")
 		pacman -Syy
