@@ -95,11 +95,6 @@ function userSetup() {
 	echo "${HOSTNM:=UA}" > /etc/hostname
 }
 
-function appendHosts() {
-	echo "${HOSTS}" >> /etc/hosts
-}
-
-
 case "${1}" in
 
 	"checkEFI")
@@ -146,7 +141,8 @@ case "${1}" in
 	"sysSetup")
 		userSetup "${2}" "${3}"
 
-		appendHosts
+		echo "${HOSTS}" >> /etc/hosts
+
 
 		systemctl enable NetworkManager
 		passwd
