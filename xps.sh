@@ -11,6 +11,7 @@ USAGE='''Commands:
 	enterSys
 	internalInstall
 	sysSetup
+	bootOrder
 	grubSetup
 	prepareReboot'''
 
@@ -146,14 +147,14 @@ case "${1}" in
 		useradd -m -g users -Gwheel "${username}"
 		passwd "${username}"
 		;;
-	"grubSetup")
-		grub-install
-		grub-mkconfig -o /boot/grub/grub.cfg
-		;;
 	"bootOrder")
 		efibootmgr -v
 		echo "To change the boot order use:"
 		echo "efibootmgr -o 0002,0001,0003"
+		;;
+	"grubSetup")
+		grub-install
+		grub-mkconfig -o /boot/grub/grub.cfg
 		;;
 	"prepareReboot")
 		umount -R /mnt
