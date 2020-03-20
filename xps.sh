@@ -150,6 +150,11 @@ case "${1}" in
 		grub-install
 		grub-mkconfig -o /boot/grub/grub.cfg
 		;;
+	"bootOrder")
+		efibootmgr -v
+		echo "To change the boot order use:"
+		echo "efibootmgr -o 0002,0001,0003"
+		;;
 	"prepareReboot")
 		umount -R /mnt
 		swapoff -a
