@@ -4,6 +4,7 @@ USAGE='''Commands:
 	checkEFI
 	checkInternet
 	setWifi
+	reset
 	setClock
 	partitionDisk <disk> <bootSize> <rootSize> <swapSize> <homeSize>
 		defaults[GB]: 1 boot, 20 root, 12 swap, rest of filesystem home
@@ -45,6 +46,17 @@ function setWifi() {
 	echo "now run sudo netctl start <service>"
 }
 
+function reset() {
+umount -R /mnt
+swapoff -a
+
+sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk "${disk}"
+	g # clear the in memory partition table
+	w # write the partition table
+	q # and we're done
+EOF
+}
+
 function format() {
 	part="${1}"
 
@@ -52,7 +64,6 @@ function format() {
 	mkfs.fat -F32 /dev/${part}1
 	mkfs.ext4 /dev/${part}2
 	mkswap /dev/${part}3
-	swapon /dev/${part}3
 	mkfs.ext4 /dev/${part}4
 }
 
@@ -61,11 +72,12 @@ function mountInstall() {
 
 	# mounting
 	mount /dev/${part}2 /mnt
-	mkdir /mnt/boot
-	mkdir /mnt/boot/efi
+	mkdir -p /mnt/boot
+	mkdir -p /mnt/boot/efi
 	mount /dev/${part}1 /mnt/boot/efi
-	mkdir /mnt/home
+	mkdir -p /mnt/home
 	mount /dev/${part}4 /mnt/home
+	swapon /dev/${part}3
 }
 
 function userSetup() {
@@ -92,6 +104,9 @@ case "${1}" in
 		checkInternet
 		;;
 	"setWifi")
+		reset
+		;;
+	"reset")
 		setWifi
 		;;
 	"setClock")
