@@ -4,6 +4,7 @@ USAGE='''Commands:
 	checkEFI
 	checkInternet
 	setWifi
+	setupGit
 	reset
 	setClock
 	partitionDisk <disk> <bootSize> <rootSize> <swapSize> <homeSize>
@@ -21,7 +22,8 @@ USAGE='''Commands:
 		defaults: UA, Detroit
 	bootOrder
 	grubSetup
-	prepareReboot'''
+	prepareReboot
+	createUser <username>'''
 
 function checkEFI() {
 if [[ $(ls '/sys/firmware/efi/efivars' &>/dev/null; echo $?) -eq 0 ]]; then
@@ -43,6 +45,11 @@ fi
 function setWifi() {
 wifi-menu
 echo "now run sudo netctl start <service>"
+}
+
+function setupGit() {
+git config --global user.email "mrgarelli@gmail.com"
+git config --global user.name "Matthew Garelli"
 }
 
 function reset() {
@@ -100,6 +107,11 @@ END
 echo "${HOSTS}" >> /etc/hosts
 }
 
+function customGit() {
+dir="${1}"
+git --git-dir=$HOME/${dir}/ --work-tree=$HOME "${@:2}"
+}
+
 case "${1}" in
 
 	"checkEFI")
@@ -110,6 +122,9 @@ case "${1}" in
 		;;
 	"setWifi")
 		reset
+		;;
+	"setupGit")
+		setupGit
 		;;
 	"reset")
 		setWifi
@@ -141,7 +156,7 @@ case "${1}" in
 		arch-chroot /mnt # chroot into the system
 		;;
 	"internalInstall")
-		pacman -Sy vim git dhcpcd dhclient networkmanager man-db man-pages sudo openssh netctl dialog python3 python-pip xonsh i3-gaps xorg-xinit xorg-server picom lxappearance pcmanfm code unclutter konsole firefox
+		pacman -Sy gvim git dhcpcd dhclient man-db man-pages sudo openssh netctl tree dialog python3 python-pip xonsh i3-gaps feh dmenu xorg-xinit xorg-server picom lxappearance pcmanfm code unclutter konsole firefox
 		;;
 	"sysSetup")
 		hostname="${2}"
@@ -152,19 +167,23 @@ case "${1}" in
 		systemctl enable NetworkManager
 		passwd
 		;;
+	"grubSetup")
+		grub-install --target=x86_64-efi --efi-directory=/boot/efi
+		grub-mkconfig -o /boot/grub/grub.cfg
+		;;
 	"bootOrder")
 		efibootmgr -v
 		echo "To change the boot order use:"
 		echo "efibootmgr -o 0002,0001,0003"
 		;;
-	"grubSetup")
-		grub-install --target=x86_64-efi --efi-directory=/boot/efi
-		efibootmgr -c -d "${disk}" -p 1 -L ArchLinux -l /EFI/arch/grubx64.efi
-		grub-mkconfig -o /boot/grub/grub.cfg
-		;;
 	"prepareReboot")
 		umount -R /mnt
 		swapoff -a
+		;;
+	"createUser")
+		username="${2}"
+		useradd -m -g users -G wheel "${username}"
+		passwd "${username}"
 		;;
 	*)
 		echo "${USAGE}"

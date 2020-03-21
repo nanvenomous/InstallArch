@@ -144,18 +144,17 @@ case "${1}" in
 		systemctl enable NetworkManager
 		passwd
 
-		useradd -m -g users -Gwheel "${username}"
+		useradd -m -g users -G wheel "${username}"
 		passwd "${username}"
+		;;
+	"grubSetup")
+		grub-install --target=x86_64-efi --efi-directory=/boot/efi --recheck
+		grub-mkconfig -o /boot/grub/grub.cfg
 		;;
 	"bootOrder")
 		efibootmgr -v
 		echo "To change the boot order use:"
 		echo "efibootmgr -o 0002,0001,0003"
-		;;
-	"grubSetup")
-		grub-install --target=x86_64-efi --efi-directory=/boot/efi --recheck
-		efibootmgr -c -d "${disk}" -p 1 -L ArchLinux -l /EFI/arch/grubx64.efi
-		grub-mkconfig -o /boot/grub/grub.cfg
 		;;
 	"prepareReboot")
 		umount -R /mnt
