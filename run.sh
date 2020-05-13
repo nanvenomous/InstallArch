@@ -156,7 +156,10 @@ case "${1}" in
 		arch-chroot /mnt # chroot into the system
 		;;
 	"internalInstall")
-		pacman -Sy gvim git dhcpcd dhclient man-db man-pages sudo openssh netctl tree dialog python3 python-pip xonsh i3-gaps feh dmenu xorg-xinit xorg-server picom lxappearance pcmanfm code unclutter konsole firefox
+		pacman -Sy gvim git dhcpcd dhclient man-db man-pages sudo openssh netctl tree dialog python3 python-pip xonsh i3-gaps feh dmenu xorg-xinit xorg-server picom lxappearance pcmanfm code unclutter konsole firefox pulseaudio pulseaudio-bluetooth pulseaudio-alsa alsa-utils bluez bluez-utils paman iw
+		systemctl enable bluetooth.service
+		systemctl --user enable pulseaudio
+		amixer sset Master unmute
 		;;
 	"sysSetup")
 		hostname="${2}"
