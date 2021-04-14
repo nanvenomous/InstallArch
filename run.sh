@@ -7,6 +7,7 @@ USAGE='''Commands:
 	setupGit
 	reset <disk>
 	setClock
+		Default: Denver
 	partitionDisk <disk> <bootSize> <rootSize> <swapSize> <homeSize>
 		defaults[GB]: 1 boot, 20 root, 12 swap, rest of filesystem home
 	format <partitionIdentifier>
@@ -21,7 +22,7 @@ USAGE='''Commands:
 	enterSys
 	internalInstall
 	sysSetup <hostname> <city>
-		defaults: UA, Denver
+		defaults: ichiraku, Denver
 	bootOrder
 	grubSetup
 	prepareReboot
@@ -167,8 +168,8 @@ case "${1}" in
 	"sysSetup")
 		hostname="${2}"
 		city="${3}"
-		userSetup "${hostname:=ua}" "${city:=Detroit}"
-		hostSetup "${hostname:=ua}"
+		userSetup "${hostname:=ichiraku}" "${city:=Denver}"
+		hostSetup "${hostname:=ichiraku}"
 
 		systemctl enable NetworkManager
 		passwd
