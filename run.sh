@@ -5,21 +5,23 @@ USAGE='''Commands:
 	checkInternet
 	setWifi
 	setupGit
-	reset
+	reset <disk>
 	setClock
 	partitionDisk <disk> <bootSize> <rootSize> <swapSize> <homeSize>
 		defaults[GB]: 1 boot, 20 root, 12 swap, rest of filesystem home
 	format <partitionIdentifier>
 		example: for partition /dev/sda1, partitionIdentifier=sda
+		example: for partition /dev/nvme0np1 partitionIdentifier=nvme0np
 	mounting <partitionIdentifier>
 		example: for partition /dev/sda1, partitionIdentifier=sda
+		example: for partition /dev/nvme0np1 partitionIdentifier=nvme0np
 	update
 	install
 	tab
 	enterSys
 	internalInstall
 	sysSetup <hostname> <city>
-		defaults: UA, Detroit
+		defaults: UA, Denver
 	bootOrder
 	grubSetup
 	prepareReboot
@@ -43,8 +45,7 @@ fi
 }
 
 function setWifi() {
-wifi-menu
-echo "now run sudo netctl start <service>"
+iwctl
 }
 
 function setupGit() {
@@ -53,6 +54,8 @@ git config --global user.name "Matthew Garelli"
 }
 
 function reset() {
+disk="${1}"
+echo "disk to reformat: ${disk}"
 umount -R /mnt
 swapoff -a
 
@@ -121,26 +124,26 @@ case "${1}" in
 		checkInternet
 		;;
 	"setWifi")
-		reset
+		setWifi
 		;;
 	"setupGit")
 		setupGit
 		;;
 	"reset")
-		setWifi
+		reset "${@:2}"
 		;;
 	"setClock")
 		timedatectl set-ntp true
-		timedatectl set-timezone America/Detroit
+		timedatectl set-timezone America/Denver
 		;;
 	"partitionDisk")
-		./partitioning.sh "${2}" "${3}" "${4}" "${5}" "${6}"
+		./partitioning.sh "${@:2}"
 		;;
 	"format")
-		format "${2}"
+		format "${@:2}"
 		;;
 	"mounting")
-		mounting "${2}"
+		mounting "${@:2}"
 		;;
 	"update")
 		pacman -Syy
