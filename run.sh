@@ -1,6 +1,7 @@
 #!/bin/bash
 
 USAGE='''Commands:
+	terminalSetup
 	checkEFI
 	checkInternet
 	setWifi
@@ -12,10 +13,10 @@ USAGE='''Commands:
 		defaults[GB]: 1 boot, 20 root, 12 swap, rest of filesystem home
 	format <partitionIdentifier>
 		example: for partition /dev/sda1, partitionIdentifier=sda
-		example: for partition /dev/nvme0np1 partitionIdentifier=nvme0np
+		example: for partition /dev/nvme0n1p1 partitionIdentifier=nvme0n1p
 	mounting <partitionIdentifier>
 		example: for partition /dev/sda1, partitionIdentifier=sda
-		example: for partition /dev/nvme0np1 partitionIdentifier=nvme0np
+		example: for partition /dev/nvme0n1p1 partitionIdentifier=nvme0n1p
 	update
 	install
 	tab
@@ -23,10 +24,54 @@ USAGE='''Commands:
 	internalInstall
 	sysSetup <hostname> <city>
 		defaults: ichiraku, Denver
-	bootOrder
+	createUser <username>
 	grubSetup
-	prepareReboot
-	createUser <username>'''
+	bootOrder
+	addBootEntry <disk>
+		example disk: /dev/nvme0n1
+	prepareReboot'''
+
+function addBootEntry() {
+	disk="${1}"
+	label="${2}"
+	echo "disk: ${disk}"
+
+	echo
+	echo '########### partitions by uuid'
+	ls -l /dev/disk/by-uuid/
+
+	echo
+	echo '########### partitions on disk'
+	lsblk
+
+	echo
+	echo '########### derived parameters'
+
+	efiNumber="$(lsblk | grep 'part /boot/efi$' | awk '{print $1}' | tail -c 2)"
+	echo "EFI partition number: ${efiNumber}"
+
+	rootNumber="$(lsblk | grep 'part /$' | awk '{print $1}' | tail -c 2)"
+	echo "root partition number: ${rootNumber}"
+
+	swapNumber="$(lsblk | grep 'part \[SWAP\]$' | awk '{print $1}' | tail -c 2)"
+	echo "swap partition number: ${swapNumber}"
+
+	diskID="${disk##*/}"
+	echo "diskID: ${diskID}"
+
+	rootUUID="$(ls -l /dev/disk/by-uuid/ | grep "${diskID}\?p${rootNumber}" | awk '{print $9}')"
+	echo "root UUID: ${rootUUID}"
+
+	swapUUID="$(ls -l /dev/disk/by-uuid/ | grep "${diskID}\?p${swapNumber}" | awk '{print $9}')"
+	echo "swap UUID: ${swapUUID}"
+
+	echo
+	if [ -z "${label} "]; then
+		efibootmgr --disk "${disk}" --part "${efiNumber}" --create --label "${label}" --loader /vmlinuz-linux --unicode "root=PARTUUID=${rootUUID} resume=PARTUUID=${swapUUID} rw initrd=/initramfs-linux.img" --verbose
+	else
+		echo "must pass <label> param to run boot entry creation"
+	fi
+}
 
 function checkEFI() {
 if [[ $(ls '/sys/firmware/efi/efivars' &>/dev/null; echo $?) -eq 0 ]]; then
@@ -118,6 +163,10 @@ git --git-dir=$HOME/${dir}/ --work-tree=$HOME "${@:2}"
 
 case "${1}" in
 
+	"terminalSetup")
+		echo "set -o vi"
+		echo "alias c='clear'"
+		;;
 	"checkEFI")
 		checkEFI
 		;;
@@ -160,7 +209,7 @@ case "${1}" in
 		arch-chroot /mnt # chroot into the system
 		;;
 	"internalInstall")
-		pacman -Sy gvim git dhcpcd dhclient man-db man-pages sudo openssh netctl tree dialog python3 python-pip xonsh i3-gaps feh dmenu xorg-xinit xorg-server picom lxappearance pcmanfm code unclutter konsole firefox pulseaudio pulseaudio-bluetooth pulseaudio-alsa alsa-utils bluez bluez-utils paman iw
+		pacman -Sy gvim git dhcpcd dhclient man-db man-pages sudo openssh netctl tree dialog python3 python-pip xonsh i3-gaps feh dmenu xorg-xinit xorg-server picom lxappearance pcmanfm code unclutter konsole pulseaudio pulseaudio-bluetooth pulseaudio-alsa alsa-utils bluez bluez-utils iw
 		systemctl enable bluetooth.service
 		systemctl --user enable pulseaudio
 		amixer sset Master unmute
@@ -182,6 +231,9 @@ case "${1}" in
 		efibootmgr -v
 		echo "To change the boot order use:"
 		echo "efibootmgr -o 0002,0001,0003"
+		;;
+	"ab")
+		addBootEntry "${@:2}"
 		;;
 	"prepareReboot")
 		umount -R /mnt
