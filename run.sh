@@ -27,7 +27,7 @@ USAGE='''Commands:
 	createUser <username>
 	grubSetup
 	bootOrder
-	addBootEntry <disk>
+	addBootEntry <disk> <label?>
 		example disk: /dev/nvme0n1
 	prepareReboot'''
 
@@ -209,8 +209,10 @@ case "${1}" in
 		arch-chroot /mnt # chroot into the system
 		;;
 	"internalInstall")
-		pacman -Sy gvim git dhcpcd dhclient man-db man-pages sudo openssh netctl tree dialog python3 python-pip xonsh i3-gaps feh dmenu xorg-xinit xorg-server picom lxappearance pcmanfm code unclutter konsole pulseaudio pulseaudio-bluetooth pulseaudio-alsa alsa-utils bluez bluez-utils iw
+		pacman -Sy gvim git dhcpcd dhclient man-db man-pages sudo openssh netctl tree dialog python3 python-pip xonsh i3-gaps feh dmenu xorg-xinit xorg-server picom lxappearance pcmanfm code unclutter konsole pulseaudio pulseaudio-bluetooth pulseaudio-alsa alsa-utils bluez bluez-utils iw iwd
 		systemctl enable bluetooth.service
+		systemctl enable dhcpcd.service
+		systemctl enable iwd.service
 		systemctl --user enable pulseaudio
 		amixer sset Master unmute
 		;;
@@ -220,7 +222,7 @@ case "${1}" in
 		userSetup "${hostname:=ichiraku}" "${city:=Denver}"
 		hostSetup "${hostname:=ichiraku}"
 
-		systemctl enable NetworkManager
+		systemctl enable iwd
 		passwd
 		;;
 	"grubSetup")
