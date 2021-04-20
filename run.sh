@@ -200,7 +200,7 @@ case "${1}" in
 		pacman -Sy archlinux-keyring
 		;;
 	"install")
-		pacstrap /mnt base base-devel linux linux-firmware efibootmgr grub networkmanager
+		pacstrap /mnt base base-devel linux linux-lts-headers linux-firmware efibootmgr grub networkmanager
 		;;
 	"tab")
 		genfstab -U /mnt >> /mnt/etc/fstab
@@ -209,12 +209,7 @@ case "${1}" in
 		arch-chroot /mnt # chroot into the system
 		;;
 	"internalInstall")
-		pacman -Sy gvim git dhcpcd dhclient man-db man-pages sudo openssh netctl tree dialog python3 python-pip xonsh i3-gaps feh dmenu xorg-xinit xorg-server picom lxappearance pcmanfm code unclutter konsole pulseaudio pulseaudio-bluetooth pulseaudio-alsa alsa-utils bluez bluez-utils iw iwd
-		systemctl enable bluetooth.service
-		systemctl enable dhcpcd.service
-		systemctl enable iwd.service
-		systemctl --user enable pulseaudio
-		amixer sset Master unmute
+		pacman -Sy gvim git dhcpcd dhclient man-db man-pages sudo openssh netctl tree dialog python3 python-pip xonsh i3-gaps feh dmenu xorg-xinit xorg-server picom lxappearance pcmanfm code unclutter konsole pulseaudio pulseaudio-bluetooth pulseaudio-alsa alsa-utils bluez bluez-utils iw broadcom-wl
 		;;
 	"sysSetup")
 		hostname="${2}"
@@ -222,7 +217,10 @@ case "${1}" in
 		userSetup "${hostname:=ichiraku}" "${city:=Denver}"
 		hostSetup "${hostname:=ichiraku}"
 
-		systemctl enable iwd
+		systemctl enable bluetooth.service
+		systemctl enable NetworkManager.service
+		systemctl --user enable pulseaudio
+		amixer sset Master unmute
 		passwd
 		;;
 	"grubSetup")
@@ -250,3 +248,4 @@ case "${1}" in
 		echo "${USAGE}"
 		;;
 esac
+
