@@ -200,7 +200,7 @@ case "${1}" in
 		pacman -Sy archlinux-keyring
 		;;
 	"install")
-		pacstrap /mnt base base-devel linux-lts linux-lts-headers linux-lts-docs linux-firmware efibootmgr grub networkmanager
+		pacstrap /mnt base base-devel linux-lts linux-lts-headers linux-lts-docs linux-firmware efibootmgr grub networkmanager iwd bash-completion
 		;;
 	"tab")
 		genfstab -U /mnt >> /mnt/etc/fstab
@@ -209,7 +209,7 @@ case "${1}" in
 		arch-chroot /mnt # chroot into the system
 		;;
 	"internalInstall")
-		pacman -Sy gvim git dhcpcd dhclient man-db man-pages sudo openssh netctl tree dialog python3 python-pip i3-gaps feh dmenu xorg-xinit xorg-server picom lxappearance code unclutter alacritty pulseaudio pulseaudio-bluetooth pulseaudio-alsa alsa-utils bluez bluez-utils iw broadcom-wl go node lxappearance
+		pacman -Sy gvim git dhcpcd dhclient man-db man-pages sudo openssh netctl tree dialog python3 python-pip i3-gaps feh dmenu xorg-xinit xorg-server picom lxappearance code unclutter alacritty pulseaudio pulseaudio-bluetooth pulseaudio-alsa alsa-utils bluez bluez-utils go node lxappearance
 		;;
 	"sysSetup")
 		hostname="${2}"
