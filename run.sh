@@ -209,7 +209,7 @@ case "${1}" in
 		arch-chroot /mnt # chroot into the system
 		;;
 	"internalInstall")
-		pacman -Sy gvim git zsh zsh-completions dhcpcd dhclient man-db man-pages sudo openssh netctl tree dialog python3 python-pip i3-gaps feh dmenu xorg-xinit xorg-server picom lxappearance code unclutter alacritty pulseaudio pulseaudio-bluetooth pulseaudio-alsa alsa-utils bluez bluez-utils iw go node lxappearance xsel
+		pacman -Sy nvim git zsh zsh-completions dhcpcd dhclient man-db man-pages sudo openssh netctl tree dialog python3 python-pip i3-gaps feh dmenu xorg-xinit xorg-server picom lxappearance code unclutter alacritty pulseaudio pulseaudio-bluetooth pulseaudio-alsa alsa-utils bluez bluez-utils iw go node lxappearance xsel
 		;;
 	"sysSetup")
 		hostname="${2}"
