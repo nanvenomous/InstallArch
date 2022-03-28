@@ -200,7 +200,7 @@ case "${1}" in
 		pacman -Sy archlinux-keyring
 		;;
 	"install")
-		pacstrap /mnt base base-devel linux-lts linux-lts-headers linux-lts-docs linux-firmware efibootmgr grub networkmanager iwd bash-completion
+		pacstrap /mnt base base-devel linux linux-headers linux-docs linux-firmware efibootmgr grub networkmanager bash-completion
 		;;
 	"tab")
 		genfstab -U /mnt >> /mnt/etc/fstab
@@ -209,7 +209,8 @@ case "${1}" in
 		arch-chroot /mnt # chroot into the system
 		;;
 	"internalInstall")
-		pacman -Sy nvim git github-cli zsh zsh-completions dhcpcd dhclient man-db man-pages sudo openssh netctl tree dialog python3 python-pip i3-gaps feh dmenu xorg-xinit xorg-server picom lxappearance code unclutter alacritty pulseaudio pulseaudio-bluetooth pulseaudio-alsa alsa-utils bluez bluez-utils iw go node lxappearance xsel
+		pacman -Sy nvim git zsh zsh-completions dhcpcd dhclient man-db man-pages sudo openssh netctl tree dialog python3 python-pip i3-gaps feh dmenu xorg-xinit xorg-server picom lxappearance unclutter alacritty pulseaudio pulseaudio-bluetooth pulseaudio-alsa alsa-utils bluez bluez-utils go gopls node npm lxappearance xsel
+    sudo npm i -g typescript-language-server typescript pyright
 		;;
 	"sysSetup")
 		hostname="${2}"
@@ -218,7 +219,7 @@ case "${1}" in
 		hostSetup "${hostname:=ichiraku}"
 
 		systemctl enable bluetooth.service
-		# systemctl enable NetworkManager.service
+		systemctl enable NetworkManager.service
 		systemctl --user enable pulseaudio
 		amixer sset Master unmute
 		passwd
