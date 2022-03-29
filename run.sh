@@ -209,7 +209,7 @@ case "${1}" in
 		arch-chroot /mnt # chroot into the system
 		;;
 	"internalInstall")
-		pacman -Sy nvim git zsh zsh-completions dhcpcd dhclient man-db man-pages sudo openssh netctl tree dialog python3 python-pip i3-gaps feh dmenu xorg-xinit xorg-server picom lxappearance unclutter alacritty pulseaudio pulseaudio-bluetooth pulseaudio-alsa alsa-utils bluez bluez-utils go gopls node npm lxappearance xsel
+		pacman -Sy nvim git zsh zsh-completions dhcpcd dhclient man-db man-pages sudo openssh netctl tree dialog python3 python-pip i3-gaps i3status feh dmenu xorg-xinit xorg-server picom lxappearance unclutter alacritty pulseaudio pulseaudio-bluetooth pulseaudio-alsa alsa-utils bluez bluez-utils go gopls node npm lxappearance xsel ripgrep lazygit
     sudo npm i -g typescript-language-server typescript pyright
 		;;
 	"sysSetup")
