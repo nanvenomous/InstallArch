@@ -22,6 +22,7 @@ USAGE='''Commands:
 	tab
 	enterSys
 	internalInstall
+	installWithNPM
 	sysSetup <hostname> <city>
 		defaults: ichiraku, Denver
 	createUser <username>
@@ -209,8 +210,10 @@ case "${1}" in
 		arch-chroot /mnt # chroot into the system
 		;;
 	"internalInstall")
-		pacman -Sy nvim git zsh zsh-completions dhcpcd dhclient man-db man-pages sudo openssh netctl tree dialog python3 python-pip i3-gaps i3status feh dmenu xorg-xinit xorg-server picom lxappearance unclutter alacritty pulseaudio pulseaudio-bluetooth pulseaudio-alsa alsa-utils bluez bluez-utils go gopls node npm lxappearance xsel ripgrep lazygit
-    sudo npm i -g typescript-language-server typescript pyright
+		pacman -Sy neovim git zsh zsh-completions zsh-syntax-highlighting dhcpcd dhclient man-db man-pages sudo openssh netctl tree dialog python3 python-pip i3-gaps i3status feh dmenu xorg-xinit xorg-server picom lxappearance unclutter alacritty pulseaudio pulseaudio-bluetooth pulseaudio-alsa alsa-utils bluez bluez-utils go gopls nodejs npm lxappearance xsel ripgrep lazygit neofetch exa zoxide entr xfce4-power-manager firefox bat
+		;;
+	"installWithNPM")
+		sudo npm i -g typescript-language-server typescript pyright
 		;;
 	"sysSetup")
 		hostname="${2}"
