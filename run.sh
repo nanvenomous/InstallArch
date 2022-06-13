@@ -186,6 +186,10 @@ case "${1}" in
 	"setClock")
 		timedatectl set-ntp true
 		timedatectl set-timezone America/Denver
+
+    sudo systemctl start systemd-timesyncd.service
+    sudo systemctl enable systemd-timesyncd.service
+    cp rsrc/09-timezone /etc/NetworkManager/dispatcher.d/
 		;;
 	"partitionDisk")
 		./partitioning.sh "${@:2}"
