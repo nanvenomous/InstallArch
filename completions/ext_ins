@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+complete -W 'completions checkEFI checkInternet setWifi reset setClock partitionDisk format mounting update install tab enterSys prepareReboot' ext_ins

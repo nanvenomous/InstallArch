@@ -1,7 +1,7 @@
 #!/bin/bash
 
 USAGE='''Commands:
-	internalInstall
+	install
 	npmInstall
 	sysSetup <hostname> <city>
 		defaults: ichiraku, Denver
@@ -13,7 +13,7 @@ USAGE='''Commands:
   configureGit'''
 
 case "${1}" in
-	"internalInstall")
+	"install")
     pacman -Sy $(cat ./rsrc/internal_packages.txt | tr '\n' ' ' )
 		# pacman -Sy neovim git zsh zsh-completions zsh-syntax-highlighting dhcpcd dhclient man-db man-pages sudo openssh netctl tree dialog python3 python-pip i3-gaps i3status feh dmenu xorg-xinit xorg-server picom lxappearance unclutter alacritty pulseaudio pulseaudio-bluetooth pulseaudio-alsa alsa-utils bluez bluez-utils go gopls nodejs npm lxappearance xsel ripgrep lazygit neofetch exa zoxide entr xfce4-power-manager firefox bat
 

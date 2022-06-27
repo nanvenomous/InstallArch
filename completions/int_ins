@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+complete -W 'install npmInstall sysSetup createUser grubSetup bootOrder setupGit checkoutGit configureGit' int_ins
+
+
