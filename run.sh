@@ -5,7 +5,6 @@ USAGE='''Commands:
 	checkEFI
 	checkInternet
 	setWifi
-	setupGit
 	reset <disk>
 	setClock
 		Default: Denver
@@ -28,51 +27,11 @@ USAGE='''Commands:
 	createUser <username>
 	grubSetup
 	bootOrder
-	addBootEntry <disk> <label?>
-		example disk: /dev/nvme0n1
+	setupGit
+  checkoutGit
+  configureGit
 	prepareReboot'''
 
-function addBootEntry() {
-	disk="${1}"
-	label="${2}"
-	echo "disk: ${disk}"
-
-	echo
-	echo '########### partitions by uuid'
-	ls -l /dev/disk/by-uuid/
-
-	echo
-	echo '########### partitions on disk'
-	lsblk
-
-	echo
-	echo '########### derived parameters'
-
-	efiNumber="$(lsblk | grep 'part /boot/efi$' | awk '{print $1}' | tail -c 2)"
-	echo "EFI partition number: ${efiNumber}"
-
-	rootNumber="$(lsblk | grep 'part /$' | awk '{print $1}' | tail -c 2)"
-	echo "root partition number: ${rootNumber}"
-
-	swapNumber="$(lsblk | grep 'part \[SWAP\]$' | awk '{print $1}' | tail -c 2)"
-	echo "swap partition number: ${swapNumber}"
-
-	diskID="${disk##*/}"
-	echo "diskID: ${diskID}"
-
-	rootUUID="$(ls -l /dev/disk/by-uuid/ | grep "${diskID}\?p${rootNumber}" | awk '{print $9}')"
-	echo "root UUID: ${rootUUID}"
-
-	swapUUID="$(ls -l /dev/disk/by-uuid/ | grep "${diskID}\?p${swapNumber}" | awk '{print $9}')"
-	echo "swap UUID: ${swapUUID}"
-
-	echo
-	if [ -z "${label} "]; then
-		efibootmgr --disk "${disk}" --part "${efiNumber}" --create --label "${label}" --loader /vmlinuz-linux --unicode "root=PARTUUID=${rootUUID} resume=PARTUUID=${swapUUID} rw initrd=/initramfs-linux.img" --verbose
-	else
-		echo "must pass <label> param to run boot entry creation"
-	fi
-}
 
 function checkEFI() {
 if [[ $(ls '/sys/firmware/efi/efivars' &>/dev/null; echo $?) -eq 0 ]]; then
@@ -93,11 +52,6 @@ fi
 
 function setWifi() {
 iwctl
-}
-
-function setupGit() {
-git config --global user.email "mrgarelli@gmail.com"
-git config --global user.name "Matthew Garelli"
 }
 
 function reset() {
@@ -177,9 +131,6 @@ case "${1}" in
 	"setWifi")
 		setWifi
 		;;
-	"setupGit")
-		setupGit
-		;;
 	"reset")
 		reset "${@:2}"
 		;;
@@ -205,7 +156,7 @@ case "${1}" in
 		pacman -Sy archlinux-keyring
 		;;
 	"install")
-		pacstrap /mnt base base-devel linux linux-headers linux-docs linux-firmware efibootmgr grub networkmanager bash-completion
+		pacstrap /mnt base base-devel linux linux-headers linux-docs linux-firmware efibootmgr grub networkmanager bash-completion zsh zsh-completions
 		;;
 	"tab")
 		genfstab -U /mnt >> /mnt/etc/fstab
@@ -231,6 +182,11 @@ case "${1}" in
 		amixer sset Master unmute
 		passwd
 		;;
+	"createUser")
+		username="${2}"
+		useradd -m -g users -G wheel "${username}"
+		passwd "${username}"
+		;;
 	"grubSetup")
 		grub-install --target=x86_64-efi --efi-directory=/boot/efi
 		grub-mkconfig -o /boot/grub/grub.cfg
@@ -240,17 +196,21 @@ case "${1}" in
 		echo "To change the boot order use:"
 		echo "efibootmgr -o 0002,0001,0003"
 		;;
-	"ab")
-		addBootEntry "${@:2}"
+	"setupGit")
+    cd "${HOME}"
+    git clone --bare 'https://github.com/nanvenomous/unix.git' "${HOME}/.unx"
+		;;
+	"checkoutGit")
+    git --git-dir=${HOME}/.unx/ --work-tree=${HOME} checkout
+		;;
+	"configureGit")
+    git config --global core.excludesfile ~/.gitignore
+    git config --global --includes include.path './.keybindings_git'
+    git --git-dir=${HOME}/.unx/ --work-tree=${HOME} config --local status.showUntrackedFiles no
 		;;
 	"prepareReboot")
 		umount -R /mnt
 		swapoff -a
-		;;
-	"createUser")
-		username="${2}"
-		useradd -m -g users -G wheel "${username}"
-		passwd "${username}"
 		;;
 	*)
 		echo "${USAGE}"
