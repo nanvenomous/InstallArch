@@ -1,5 +1,11 @@
-# Instructions for installing Arch Linux
+# Arch Linux Installation Instructions
 
-> ./run.sh
+customizable Step-by-step instructions to install arch linux
 
-Run the commands in sequence
+* commands to run from live usb before entering arch system
+> ./ext.sh
+
+* commands to run on newly installed system
+> ./int.sh
+
+Note: run the commands in sequence

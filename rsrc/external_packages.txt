@@ -1,0 +1,14 @@
+base
+base-devel
+linux
+linux-headers
+linux-docs
+linux-firmware
+efibootmgr
+grub
+networkmanager
+bash-completion
+zsh
+zsh-completions
+neovim
+git 
