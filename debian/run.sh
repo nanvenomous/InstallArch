@@ -4,14 +4,11 @@ USAGE='''Commands:
 	update
 	aptInstall
 	aptGetInstall
-	sysSetup <hostname> <city>
-		defaults: ichiraku, Denver
-	createUser <username>
-	grubSetup
-	bootOrder
 	setupGit
 	checkoutGit
-	configureGit'''
+	configureGit
+	zshSetup
+'''
 
 case "${1}" in
 	"update")
@@ -21,50 +18,27 @@ case "${1}" in
 		sudo apt upgrade
 		;;
 	"aptInstall")
-		sudo apt install zsh
-		# pacman -Sy neovim git zsh zsh-completions zsh-syntax-highlighting dhcpcd dhclient man-db man-pages sudo openssh netctl tree dialog python3 python-pip i3-gaps i3status feh dmenu xorg-xinit xorg-server picom lxappearance unclutter alacritty pulseaudio pulseaudio-bluetooth pulseaudio-alsa alsa-utils bluez bluez-utils go gopls nodejs npm lxappearance xsel ripgrep lazygit neofetch exa zoxide entr xfce4-power-manager firefox bat
-
+		sudo apt install build-essential zsh xauth
 		;;
 	"aptGetInstall")
-		sudo apt-get install neovim exa neofetch xsel ripgrep zoxide
-		;;
-	"sysSetup")
-		hostname="${2}"
-		city="${3}"
-		userSetup "${hostname:=ichiraku}" "${city:=Denver}"
-		hostSetup "${hostname:=ichiraku}"
-
-		systemctl enable bluetooth.service
-		systemctl enable NetworkManager.service
-		systemctl --user enable pulseaudio
-		amixer sset Master unmute
-		passwd
-		;;
-	"createUser")
-		username="${2}"
-		useradd -m -g users -G wheel "${username}"
-		passwd "${username}"
-		;;
-	"grubSetup")
-		grub-install --target=x86_64-efi --efi-directory=/boot/efi
-		grub-mkconfig -o /boot/grub/grub.cfg
-		;;
-	"bootOrder")
-		efibootmgr -v
-		echo "To change the boot order use:"
-		echo "efibootmgr -o 0002,0001,0003"
+		sudo apt-get install neovim exa neofetch xsel ripgrep zoxide software-properties-common
+		sudo apt-get install ninja-build gettext libtool libtool-bin autoconf automake cmake g++ pkg-config unzip curl doxygen
 		;;
 	"setupGit")
-    cd "${HOME}"
-    git clone --bare 'https://github.com/nanvenomous/unix.git' "${HOME}/.unx"
+		cd "${HOME}"
+		git clone --bare 'https://github.com/nanvenomous/unix.git' "${HOME}/.unx"
 		;;
 	"checkoutGit")
-    git --git-dir=${HOME}/.unx/ --work-tree=${HOME} checkout
+		git --git-dir=${HOME}/.unx/ --work-tree=${HOME} checkout
 		;;
 	"configureGit")
-    git config --global core.excludesfile ~/.gitignore
-    git config --global --includes include.path './.keybindings_git'
-    git --git-dir=${HOME}/.unx/ --work-tree=${HOME} config --local status.showUntrackedFiles no
+		git config --global core.excludesfile ~/.gitignore
+		git config --global --includes include.path './.keybindings_git'
+		git --git-dir=${HOME}/.unx/ --work-tree=${HOME} config --local status.showUntrackedFiles no
+		;;
+	"zshSetup")
+		git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ~/.settings/zsh-syntax-highlighting
+		git clone https://github.com/kutsan/zsh-system-clipboard.git ~/.settings/zsh-system-clipboard
 		;;
 	*)
 		echo "${USAGE}"
