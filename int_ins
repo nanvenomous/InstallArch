@@ -29,6 +29,7 @@ case "${1}" in
 
     systemctl enable bluetooth.service
     systemctl enable NetworkManager.service
+    systemctl enable systemd-timesyncd.service
     systemctl --user enable pulseaudio
     amixer sset Master unmute
     passwd
