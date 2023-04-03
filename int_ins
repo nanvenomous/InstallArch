@@ -4,7 +4,7 @@ USAGE='''Commands:
 install
 npmInstall
 sysSetup <hostname> <city>
-defaults: ichiraku, Denver
+defaults: fairytail, Chicago
 createUser <username>
 grubSetup
 bootOrder
@@ -24,8 +24,8 @@ case "${1}" in
   "sysSetup")
     hostname="${2}"
     city="${3}"
-    userSetup "${hostname:=ichiraku}" "${city:=Denver}"
-    hostSetup "${hostname:=ichiraku}"
+    userSetup "${hostname:=fairytail}" "${city:=Chicago}"
+    hostSetup "${hostname:=fairytail}"
 
     systemctl enable bluetooth.service
     systemctl enable NetworkManager.service

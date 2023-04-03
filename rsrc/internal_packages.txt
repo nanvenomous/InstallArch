@@ -41,3 +41,4 @@ entr
 xfce4-power-manager
 firefox
 bat
+xorg-xrandr

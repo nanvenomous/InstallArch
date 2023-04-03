@@ -22,7 +22,7 @@ sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk ${disk}
 	n # new root partition
 	2 # partition number 2
 	  # default, start immediately after preceding partition
-	+${rootSize:=20}G # root size
+	+${rootSize:=100}G # root size
 	t # type of the partition
 	2 # partition number 2
 	20 # linux filesystem
