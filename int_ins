@@ -63,6 +63,33 @@ case "${1}" in
     git --git-dir=${HOME}/.unx/ --work-tree=${HOME} config --get remote.origin.fetch
     git --git-dir=${HOME}/.unx/ --work-tree=${HOME} config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
     ;;
+  "sshKey")
+    ssh-keygen
+    echo "now add the key to your github account"
+    ;;
+  "fromSource")
+    git clone --depth 1 https://github.com/wbthomason/packer.nvim ~/.local/share/nvim/site/pack/packer/start/packer.nvim
+    mkdir -p ~/projects/3p
+
+    cd ~/projects/3p
+    git clone https://aur.archlinux.org/yay-bin.git
+    cd yay-bin
+    makepkg -si
+    cd ~/projects
+    git clone https://github.com/nanvenomous/where-to.git
+    cd where-to
+    make
+    sudo make install
+    sudo make zsh-completions
+    cd ~/projects
+    git clone git@github.com:nanvenomous/e.git
+    cd e
+    make
+    sudo make install
+    ;;
+  "yayInstalls")
+    yay -S enpass-bin slack-desktop nvm
+    ;;
   *)
     echo "${USAGE}"
     ;;
