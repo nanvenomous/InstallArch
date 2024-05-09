@@ -10,7 +10,7 @@ tree
 dialog
 python3
 python-pip
-i3-gaps
+i3
 i3status
 i3lock
 feh
@@ -36,10 +36,11 @@ xsel
 ripgrep
 lazygit
 neofetch
-exa
-zoxide
 entr
 xfce4-power-manager
 firefox
 bat
 xorg-xrandr
+unzip
+maim
+dunst
