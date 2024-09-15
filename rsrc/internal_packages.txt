@@ -44,3 +44,6 @@ xorg-xrandr
 unzip
 maim
 dunst
+docker
+qutebrowser
+noto-fonts-emoji

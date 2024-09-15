@@ -35,6 +35,8 @@ case "${1}" in
     systemctl --user enable pulseaudio
     amixer sset Master unmute
     passwd
+
+    xdg-settings set default-web-browser org.qutebrowser.qutebrowser.desktop
     ;;
   "createUser")
     username="${2}"
