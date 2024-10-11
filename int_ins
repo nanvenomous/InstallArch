@@ -1,16 +1,38 @@
 #!/bin/bash
 
 USAGE='''Commands:
-install
-npmInstall
-sysSetup <hostname> <city>
-defaults: fairytail, Chicago
-createUser <username>
-grubSetup
-bootOrder
-setupGit
-checkoutGit
-configureGit'''
+  install
+  npmInstall
+  sysSetup <hostname> <city>
+    defaults: fairytail, Chicago
+  createUser <username>
+  grubSetup
+  bootOrder
+  setupGit
+  checkoutGit
+  configureGit'''
+
+function userSetup() {
+  HOSTNM="${1}"
+  CITY="${2}"
+  ln -sf /usr/share/zoneinfo/America/${CITY} /etc/localtime
+  hwclock --systohc
+  echo "LANG=en_US>UTF-8" > /etc/local.conf
+  locale-gen
+  echo "${HOSTNM}" > /etc/hostname
+}
+
+function hostSetup() {
+  hostname="${1}"
+  HOSTS=$(cat <<-END
+127.0.0.1	localhost
+::1		localhost
+127.0.1.1	${hostname}.localdomain  ${hostname}
+END
+)
+echo "${HOSTS}" >> /etc/hosts
+}
+
 
 case "${1}" in
   "install")

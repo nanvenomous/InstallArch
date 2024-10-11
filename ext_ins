@@ -22,42 +22,42 @@ USAGE='''Commands:
 	prepareReboot'''
 
 
-function checkEFI() {
-if [[ $(ls '/sys/firmware/efi/efivars' &>/dev/null; echo $?) -eq 0 ]]; then
-	echo 'This is an EFI system.'
-else
-	echo 'This is not an EFI system. This guide does not apply :('
-fi
-}
+  function checkEFI() {
+    if [[ $(ls '/sys/firmware/efi/efivars' &>/dev/null; echo $?) -eq 0 ]]; then
+      echo 'This is an EFI system.'
+    else
+      echo 'This is not an EFI system. This guide does not apply :('
+    fi
+  }
 
-function checkInternet() {
-ping -q -c 1 google.com &>/dev/null
-if [[ $? -ne 0 ]]; then
-	echo 'There is no internet.'
-else
-	echo 'There is internet! Skip setWifi command.'
-fi
-}
+  function checkInternet() {
+    ping -q -c 1 google.com &>/dev/null
+    if [[ $? -ne 0 ]]; then
+      echo 'There is no internet.'
+    else
+      echo 'There is internet! Skip setWifi command.'
+    fi
+  }
 
-function setWifi() {
-iwctl
-}
+  function setWifi() {
+    iwctl
+  }
 
-function reset() {
-disk="${1}"
-echo "disk to reformat: ${disk}"
-umount -R /mnt
-swapoff -a
+  function reset() {
+    disk="${1}"
+    echo "disk to reformat: ${disk}"
+    umount -R /mnt
+    swapoff -a
 
-sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk "${disk}"
-	g # clear the in memory partition table
-	w # write the partition table
-	q # and we're done
+    sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk "${disk}"
+  g # clear the in memory partition table
+  w # write the partition table
+  q # and we're done
 EOF
 }
 
 function format() {
-part="${1}"
+  part="${1}"
 
 # formatting
 mkfs.fat -F32 /dev/${part}1
@@ -67,7 +67,7 @@ mkfs.ext4 /dev/${part}4
 }
 
 function mounting() {
-part="${1}"
+  part="${1}"
 
 # mounting
 mount /dev/${part}2 /mnt
@@ -79,82 +79,61 @@ mount /dev/${part}4 /mnt/home
 swapon /dev/${part}3
 }
 
-function userSetup() {
-HOSTNM="${1}"
-CITY="${2}"
-ln -sf /usr/share/zoneinfo/America/${CITY} /etc/localtime
-hwclock --systohc
-echo "LANG=en_US>UTF-8" > /etc/local.conf
-locale-gen
-echo "${HOSTNM}" > /etc/hostname
-}
-
-function hostSetup() {
-hostname="${1}"
-HOSTS=$(cat <<-END
-127.0.0.1	localhost
-::1		localhost
-127.0.1.1	${hostname}.localdomain  ${hostname}
-END
-)
-echo "${HOSTS}" >> /etc/hosts
-}
-
 function customGit() {
-dir="${1}"
-git --git-dir=$HOME/${dir}/ --work-tree=$HOME "${@:2}"
+  dir="${1}"
+  git --git-dir=$HOME/${dir}/ --work-tree=$HOME "${@:2}"
 }
 
 case "${1}" in
-	"checkEFI")
-		checkEFI
-		;;
-	"checkInternet")
-		checkInternet
-		;;
-	"setWifi")
-		setWifi
-		;;
-	"reset")
-		reset "${@:2}"
-		;;
-	"setClock")
-		timedatectl set-ntp true
-		timedatectl set-timezone America/Denver
+  "checkEFI")
+    checkEFI
+    ;;
+  "checkInternet")
+    checkInternet
+    ;;
+  "setWifi")
+    setWifi
+    ;;
+  "reset")
+    reset "${@:2}"
+    ;;
+  "setClock")
+    timedatectl set-ntp true
+    timedatectl set-timezone America/Denver
 
     sudo systemctl start systemd-timesyncd.service
     sudo systemctl enable systemd-timesyncd.service
     cp rsrc/09-timezone /etc/NetworkManager/dispatcher.d/
-		;;
-	"partitionDisk")
-		./utils/partitioning.sh "${@:2}"
-		;;
-	"format")
-		format "${@:2}"
-		;;
-	"mounting")
-		mounting "${@:2}"
-		;;
-	"update")
-		pacman -Syy
-		pacman -Sy archlinux-keyring
-		;;
-	"install")
+    ;;
+  "partitionDisk")
+    ./utils/partitioning.sh "${@:2}"
+    ;;
+  "format")
+    format "${@:2}"
+    ;;
+  "mounting")
+    mounting "${@:2}"
+    ;;
+  "update")
+    pacman -Syy
+    pacman -Sy archlinux-keyring
+    ;;
+  "install")
     pacstrap /mnt $(cat ./rsrc/external_packages.txt | tr '\n' ' ' )
-		# pacstrap /mnt base base-devel linux linux-headers linux-docs linux-firmware efibootmgr grub networkmanager bash-completion zsh zsh-completions
-		;;
-	"tab")
-		genfstab -U /mnt >> /mnt/etc/fstab
-		;;
-	"enterSys")
-		arch-chroot /mnt # chroot into the system
-		;;
-	"prepareReboot")
-		umount -R /mnt
-		swapoff -a
-		;;
-	*)
-		echo "${USAGE}"
-		;;
+    # pacstrap /mnt base base-devel linux linux-headers linux-docs linux-firmware efibootmgr grub networkmanager bash-completion zsh zsh-completions
+    ;;
+  "tab")
+    genfstab -U /mnt >> /mnt/etc/fstab
+    ;;
+  "enterSys")
+    arch-chroot /mnt # chroot into the system
+    ;;
+  "prepareReboot")
+    umount -R /mnt
+    swapoff -a
+    ;;
+  *)
+    echo "${USAGE}"
+    ;;
 esac
 
