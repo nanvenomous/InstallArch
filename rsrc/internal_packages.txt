@@ -47,3 +47,4 @@ dunst
 docker
 qutebrowser
 noto-fonts-emoji
+rofi
