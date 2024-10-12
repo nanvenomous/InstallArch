@@ -42,7 +42,7 @@ case "${1}" in
 
     ;;
   "npmInstall")
-    sudo npm i -g typescript-language-server typescript pyright vscode-langservers-extracted
+    sudo npm i -g typescript-language-server typescript pyright vscode-langservers-extracted @tailwindcss/language-server
     ;;
   "sysSetup")
     hostname="${2}"
