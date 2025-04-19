@@ -10,6 +10,8 @@ USAGE='''Commands:
   gitInstall
   yayInstall
   amdGPU
+  setClock
+    Default: America/Chicago
   sysSetup <hostname> <city>
     defaults: fairytail, Chicago
   createUser <username>
@@ -81,6 +83,14 @@ case "${1}" in
     ;;
   "amdGPU")
     sudo pacman -S xf86-video-amdgpu
+    ;;
+  "setClock")
+    timedatectl set-ntp true
+    timedatectl set-timezone America/Chicago
+
+    sudo systemctl start systemd-timesyncd.service
+    sudo systemctl enable systemd-timesyncd.service
+    cp rsrc/09-timezone /etc/NetworkManager/dispatcher.d/
     ;;
   "sysSetup")
     hostname="${2}"

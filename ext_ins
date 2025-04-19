@@ -5,8 +5,6 @@ USAGE='''Commands:
 	checkInternet
 	setWifi
 	reset <disk>
-	setClock
-		Default: Denver
 	partitionDisk <disk> <bootSize> <rootSize> <swapSize> <homeSize>
 		defaults[GB]: 1 boot, 20 root, 12 swap, rest of filesystem home
 	format <partitionIdentifier>
@@ -95,14 +93,6 @@ case "${1}" in
     ;;
   "reset")
     reset "${@:2}"
-    ;;
-  "setClock")
-    timedatectl set-ntp true
-    timedatectl set-timezone America/Denver
-
-    sudo systemctl start systemd-timesyncd.service
-    sudo systemctl enable systemd-timesyncd.service
-    cp rsrc/09-timezone /etc/NetworkManager/dispatcher.d/
     ;;
   "partitionDisk")
     ./utils/partitioning.sh "${@:2}"
