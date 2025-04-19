@@ -1,16 +1,21 @@
 #!/bin/bash
 
 USAGE='''Commands:
+  setupGit
+  checkoutGit
+  configureGit
   install
+  goInstall
   npmInstall
+  gitInstall
+  yayInstall
+  amdGPU
   sysSetup <hostname> <city>
     defaults: fairytail, Chicago
   createUser <username>
   grubSetup
   bootOrder
-  setupGit
-  checkoutGit
-  configureGit'''
+  sshKey'''
 
 function userSetup() {
   HOSTNM="${1}"
@@ -35,14 +40,47 @@ echo "${HOSTS}" >> /etc/hosts
 
 
 case "${1}" in
+  "setupGit")
+    cd "${HOME}"
+    git clone --bare 'https://github.com/nanvenomous/unix.git' "${HOME}/.unx"
+    ;;
+  "checkoutGit")
+    git --git-dir=${HOME}/.unx/ --work-tree=${HOME} checkout
+    ;;
+  "configureGit")
+    git config --global core.excludesfile ~/.gitignore
+    git config --global --includes include.path './.keybindings_git'
+    git --git-dir=${HOME}/.unx/ --work-tree=${HOME} config --local status.showUntrackedFiles no
+    git --git-dir=${HOME}/.unx/ --work-tree=${HOME} config --get remote.origin.fetch
+    git --git-dir=${HOME}/.unx/ --work-tree=${HOME} config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+    ;;
   "install")
     pacman -Sy $(cat ./rsrc/internal_packages.txt | tr '\n' ' ' )
-    yay -S font-symbola
-    # pacman -Sy neovim git zsh zsh-completions zsh-syntax-highlighting dhcpcd dhclient man-db man-pages sudo openssh netctl tree dialog python3 python-pip i3-gaps i3status feh dmenu xorg-xinit xorg-server picom lxappearance unclutter alacritty pulseaudio pulseaudio-bluetooth pulseaudio-alsa alsa-utils bluez bluez-utils go gopls nodejs npm lxappearance xsel ripgrep lazygit neofetch exa zoxide entr xfce4-power-manager firefox bat scrot
-
+    ;;
+  "goInstall")
+    go install github.com/go-task/task/v3/cmd/task@latest
+    go install github.com/a-h/templ/cmd/templ@latest
+    go install github.com/nanvenomous/e@latest
+    go install github.com/nanvenomous/where-to/cmd/find-where-to-go@latest
+    go install github.com/nanvenomous/where-to/cmd/where-to@latest
     ;;
   "npmInstall")
     sudo npm i -g typescript-language-server typescript pyright vscode-langservers-extracted @tailwindcss/language-server
+    ;;
+  "gitInstall")
+    cd ~/.scripts && git clone https://github.com/kutsan/zsh-system-clipboard.git
+    mkdir ~/projects
+    cd ~/projects
+    git clone https://aur.archlinux.org/yay.git
+    cd yay
+    makepkg -si
+    curl -fsSL https://bun.sh/install | bash 
+    ;;
+  "yayInstall")
+    yay -S font-symbola enpass-bin
+    ;;
+  "amdGPU")
+    sudo pacman -S xf86-video-amdgpu
     ;;
   "sysSetup")
     hostname="${2}"
@@ -63,7 +101,12 @@ case "${1}" in
   "createUser")
     username="${2}"
     useradd -m -g users -G wheel "${username}"
+    usermod -a -G wheel "${username}"
     passwd "${username}"
+    chsh -s /bin/zsh gin
+    ;;
+  "configUser")
+    nvim -c '/wheel' /etc/sudoers
     ;;
   "grubSetup")
     grub-install --target=x86_64-efi --efi-directory=/boot/efi
@@ -74,34 +117,11 @@ case "${1}" in
     echo "To change the boot order use:"
     echo "efibootmgr -o 0002,0001,0003"
     ;;
-  "setupGit")
-    cd "${HOME}"
-    git clone --bare 'https://github.com/nanvenomous/unix.git' "${HOME}/.unx"
-    ;;
-  "checkoutGit")
-    git --git-dir=${HOME}/.unx/ --work-tree=${HOME} checkout
-    ;;
-  "configureGit")
-    git config --global core.excludesfile ~/.gitignore
-    git config --global --includes include.path './.keybindings_git'
-    git --git-dir=${HOME}/.unx/ --work-tree=${HOME} config --local status.showUntrackedFiles no
-    git --git-dir=${HOME}/.unx/ --work-tree=${HOME} config --get remote.origin.fetch
-    git --git-dir=${HOME}/.unx/ --work-tree=${HOME} config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
-    ;;
   "sshKey")
     ssh-keygen
     echo "now add the key to your github account"
     ;;
   "fromSource")
-    git clone --depth 1 https://github.com/wbthomason/packer.nvim ~/.local/share/nvim/site/pack/packer/start/packer.nvim
-
-    curl -fsSL https://bun.sh/install | bash 
-    mkdir -p ~/projects/3p
-
-    cd ~/projects/3p
-    git clone https://aur.archlinux.org/yay-bin.git
-    cd yay-bin
-    makepkg -si
     cd ~/projects
     git clone https://github.com/nanvenomous/where-to.git
     cd where-to
@@ -113,9 +133,6 @@ case "${1}" in
     cd e
     make
     sudo make install
-    ;;
-  "yayInstalls")
-    yay -S enpass-bin slack-desktop nvm
     ;;
   *)
     echo "${USAGE}"

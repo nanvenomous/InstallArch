@@ -61,22 +61,21 @@ function format() {
 
 # formatting
 mkfs.fat -F32 /dev/${part}1
-mkfs.ext4 /dev/${part}2
-mkswap /dev/${part}3
-mkfs.ext4 /dev/${part}4
+mkswap /dev/${part}2
+mkfs.ext4 /dev/${part}3
 }
 
 function mounting() {
   part="${1}"
 
 # mounting
-mount /dev/${part}2 /mnt
+mount /dev/${part}3 /mnt
 mkdir -p /mnt/boot
 mkdir -p /mnt/boot/efi
 mount /dev/${part}1 /mnt/boot/efi
 mkdir -p /mnt/home
-mount /dev/${part}4 /mnt/home
-swapon /dev/${part}3
+# mount /dev/${part}4 /mnt/home
+swapon /dev/${part}2
 }
 
 function customGit() {
