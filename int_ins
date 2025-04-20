@@ -82,7 +82,10 @@ case "${1}" in
     yay -S font-symbola enpass-bin
     ;;
   "amdGPU")
+    sudo pacman -S ollama-rocm
     sudo pacman -S xf86-video-amdgpu
+    sudo pacman -S rocm-opencl-sdk rocm-hip-sdk
+    # yay -S opencl-amd
     ;;
   "setClock")
     timedatectl set-ntp true
