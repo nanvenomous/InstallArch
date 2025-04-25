@@ -49,3 +49,4 @@ qutebrowser
 noto-fonts-emoji
 rofi
 nvm
+lua-language-server
