@@ -17,6 +17,7 @@ feh
 dmenu
 xorg-xinit
 xorg-server
+xorg-xrandr
 picom
 unclutter
 alacritty
@@ -34,13 +35,13 @@ lxappearance
 pavucontrol
 xsel
 ripgrep
+fd
 lazygit
 neofetch
 entr
 xfce4-power-manager
 firefox
 bat
-xorg-xrandr
 unzip
 maim
 dunst
