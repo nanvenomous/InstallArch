@@ -6,7 +6,7 @@ man-pages
 sudo
 openssh
 netctl
-tree
+lsd
 dialog
 python3
 python-pip
@@ -51,3 +51,4 @@ noto-fonts-emoji
 rofi
 nvm
 lua-language-server
+git-delta
