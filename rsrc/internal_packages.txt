@@ -21,10 +21,12 @@ xorg-xrandr
 picom
 unclutter
 alacritty
-pulseaudio
-pulseaudio-bluetooth
-pulseaudio-alsa
 alsa-utils
+pipewire
+pipewire-alsa
+pipewire-pulse
+pipewire-jack
+wireplumber
 bluez
 bluez-utils
 go
