@@ -21,6 +21,8 @@ xorg-xrandr
 picom
 unclutter
 alacritty
+kitty
+ghostty
 alsa-utils
 pipewire
 pipewire-alsa
