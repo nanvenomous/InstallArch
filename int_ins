@@ -65,6 +65,7 @@ case "${1}" in
     go install github.com/nanvenomous/e@latest
     go install github.com/nanvenomous/where-to@latest
     go install github.com/moson-mo/pacseek@latest
+    go install github.com/ChausseBenjamin/termpicker@latest
     ;;
   "npmInstall")
     sudo npm i -g typescript-language-server typescript pyright vscode-langservers-extracted @tailwindcss/language-server
