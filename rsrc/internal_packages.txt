@@ -41,7 +41,7 @@ xsel
 ripgrep
 fd
 lazygit
-neofetch
+fastfetch
 entr
 xfce4-power-manager
 firefox
