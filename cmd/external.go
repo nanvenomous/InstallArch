@@ -4,9 +4,12 @@ Copyright © 2025 nanvenomous mrgarelli@gmail.com
 package cmd
 
 import (
+	"bufio"
 	"fmt"
+	"math"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -21,16 +24,89 @@ var (
 	city     string
 )
 
-// checkEFICmd represents the checkEFI command
-var checkEFICmd = &cobra.Command{
-	Use:   "check-efi",
-	Short: "Check if the system is EFI-based",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if _, err := os.Stat("/sys/firmware/efi/efivars"); err == nil {
-			fmt.Println("This is an EFI system.")
-			return nil
+// getRAMBasedSwapSize reads RAM from /proc/meminfo and calculates swap size
+// Logic: if RAM < 2GB, use 2*RAM; if RAM <= 8GB, use RAM; else use RAM/2
+// Returns swap size in GB (rounded up)
+func getRAMBasedSwapSize() (string, error) {
+	file, err := os.Open("/proc/meminfo")
+	if err != nil {
+		return "", fmt.Errorf("failed to open /proc/meminfo: %w", err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "MemTotal:") {
+			// Parse MemTotal line (format: "MemTotal:       16384000 kB")
+			fields := strings.Fields(line)
+			if len(fields) < 2 {
+				return "", fmt.Errorf("unexpected MemTotal format")
+			}
+
+			memKB, err := strconv.ParseFloat(fields[1], 64)
+			if err != nil {
+				return "", fmt.Errorf("failed to parse memory value: %w", err)
+			}
+
+			// Convert KB to GB
+			memGB := memKB / 1024 / 1024
+
+			// Calculate swap size based on RAM
+			var swapGB float64
+			if memGB < 2 {
+				swapGB = memGB * 2
+			} else if memGB <= 8 {
+				swapGB = memGB
+			} else {
+				swapGB = memGB / 2
+			}
+
+			// Round up to nearest integer
+			swapGBInt := int(math.Ceil(swapGB))
+			return strconv.Itoa(swapGBInt), nil
 		}
-		return fmt.Errorf("This is not an EFI system. This guide does not apply :(")
+	}
+
+	if err := scanner.Err(); err != nil {
+		return "", fmt.Errorf("error reading /proc/meminfo: %w", err)
+	}
+
+	return "", fmt.Errorf("MemTotal not found in /proc/meminfo")
+}
+
+func setAutoSwapOrDefault() {
+	defaultSwapSize := "32"
+	autoSwap, err := getRAMBasedSwapSize()
+	if err != nil {
+		fmt.Printf(" Falling back to default %sGB swap size: %v\n", defaultSwapSize, err)
+		swapSize = defaultSwapSize
+	} else {
+		swapSize = autoSwap
+		fmt.Printf("󰄬 Auto-calculated swap size based on system RAM: %sGB\n", swapSize)
+	}
+}
+
+// checkInputsCmd represents the checkEFI command
+var checkInputsCmd = &cobra.Command{
+	Use:   "check-inputs",
+	Short: "Check default inputs before run-all",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if _, err := os.Stat("/sys/firmware/efi/efivars"); err != nil {
+			fmt.Println(" This is not an EFI system. This guide does not apply :(")
+		} else {
+			fmt.Println("󰄬 This is an EFI system.")
+		}
+
+		setAutoSwapOrDefault()
+
+		c := exec.Command("ping", "-q", "-c", "1", "google.com")
+		if err := c.Run(); err != nil {
+			fmt.Println(" There is no internet")
+		}
+		fmt.Println("󰄬 There is internet! Skip setWifi command.")
+
+		return nil
 	},
 }
 
@@ -92,7 +168,7 @@ q
 // partitionDiskCmd represents the partitionDisk command
 var partitionDiskCmd = &cobra.Command{
 	Use:   "partition-disk",
-	Short: "Partition the disk (defaults: 1GB boot, 8GB swap, rest for root)",
+	Short: "Partition the disk (defaults: 1GB boot, auto-calculated swap based on RAM, rest for root)",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if disk == "" {
 			return fmt.Errorf("disk flag is required")
@@ -102,7 +178,7 @@ var partitionDiskCmd = &cobra.Command{
 			bootSize = "1"
 		}
 		if swapSize == "" {
-			swapSize = "8"
+			setAutoSwapOrDefault()
 		}
 
 		fdiskScript := fmt.Sprintf(`g
@@ -345,37 +421,36 @@ var runAllCmd = &cobra.Command{
 	Long: `Runs the complete Arch Linux installation process:
 
 EXTERNAL STEPS (on install medium):
-1. check-efi
-2. check-internet
-3. reset (requires --disk flag)
-4. partition-disk (requires --disk flag, optional --boot-size and --swap-size)
-5. format
-6. mounting
-7. update
-8. install
-9. copy-binary (copy InstallArch to new system)
-10. tab
+1. check-internet
+2. reset (requires --disk flag)
+3. partition-disk (requires --disk flag, optional --boot-size and --swap-size)
+4. format
+5. mounting
+6. update
+7. install
+8. copy-binary (copy InstallArch to new system)
+9. tab
 
 INTERNAL STEPS (inside new system via chroot):
-11. install-internal
-12. sys-setup (requires --hostname and --city)
-13. create-user (requires --username)
-14. config-user
-15. grub-setup
-16. setup-git
-17. checkout-git
-18. configure-git
-19. go-install
-20. npm-install
-21. git-install
-22. set-clock
-23. ssh-key
+10. install-internal
+11. sys-setup (requires --hostname and --city)
+12. create-user (requires --username)
+13. config-user
+14. grub-setup
+15. setup-git
+16. checkout-git
+17. configure-git
+18. go-install
+19. npm-install
+20. git-install
+21. set-clock
+22. ssh-key
 
 FINAL STEP:
-24. prepare-reboot
+23. prepare-reboot
 
 Required flags: --disk, --username
-Optional flags: --hostname (default: fairytail), --city (default: Chicago), --boot-size (default: 1), --swap-size (default: 8)`,
+Optional flags: --hostname (default: fairytail), --city (default: Chicago), --boot-size (default: 1), --swap-size (default: 32)`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if disk == "" {
 			return fmt.Errorf("--disk flag is required for run-all")
@@ -403,7 +478,6 @@ Optional flags: --hostname (default: fairytail), --city (default: Chicago), --bo
 			name string
 			fn   func() error
 		}{
-			{"check-efi", func() error { return checkEFICmd.RunE(cmd, []string{}) }},
 			{"check-internet", func() error { return checkInternetCmd.RunE(cmd, []string{}) }},
 			{"reset", func() error { return resetCmd.RunE(cmd, []string{}) }},
 			{"partition-disk", func() error { return partitionDiskCmd.RunE(cmd, []string{}) }},
@@ -472,12 +546,12 @@ func init() {
 
 	partitionDiskCmd.Flags().StringVarP(&disk, "disk", "d", "", "Disk to partition (e.g., /dev/sda)")
 	partitionDiskCmd.Flags().StringVarP(&bootSize, "boot-size", "b", "1", "Boot partition size in GB")
-	partitionDiskCmd.Flags().StringVarP(&swapSize, "swap-size", "s", "8", "Swap partition size in GB")
+	partitionDiskCmd.Flags().StringVarP(&swapSize, "swap-size", "s", "", "Swap partition size in GB")
 	partitionDiskCmd.MarkFlagRequired("disk")
 
 	runAllCmd.Flags().StringVarP(&disk, "disk", "d", "", "Disk to install to (e.g., /dev/sda)")
 	runAllCmd.Flags().StringVarP(&bootSize, "boot-size", "b", "1", "Boot partition size in GB")
-	runAllCmd.Flags().StringVarP(&swapSize, "swap-size", "s", "8", "Swap partition size in GB")
+	runAllCmd.Flags().StringVarP(&swapSize, "swap-size", "s", "", "Swap partition size in GB")
 	runAllCmd.Flags().StringVarP(&username, "username", "u", "", "Username to create")
 	runAllCmd.Flags().StringVarP(&hostname, "hostname", "n", "fairytail", "System hostname")
 	runAllCmd.Flags().StringVarP(&city, "city", "c", "Chicago", "City for timezone")
@@ -485,7 +559,7 @@ func init() {
 	runAllCmd.MarkFlagRequired("username")
 
 	// Add commands to root
-	rootCmd.AddCommand(checkEFICmd)
+	rootCmd.AddCommand(checkInputsCmd)
 	rootCmd.AddCommand(checkInternetCmd)
 	rootCmd.AddCommand(setWifiCmd)
 	rootCmd.AddCommand(resetCmd)
