@@ -1,0 +1,64 @@
+# https://taskfile.dev
+
+version: '3'
+
+tasks:
+  default:
+    desc: "build binary"
+    cmds:
+      - go build 
+  
+  release:
+    desc: "<1.2.3> bump version and create GitHub release for all platforms"
+    vars:
+      VERSION: '{{.CLI_ARGS}}'
+    preconditions:
+      - sh: test -n "{{.VERSION}}"
+        msg: "Version is required. Usage: task release -- 1.0.8"
+      - sh: echo "{{.VERSION}}" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$'
+        msg: "Version must be in semver format (e.g., 1.0.8)"
+    cmds:
+      # Update version file
+      - echo "{{.VERSION}}" > version
+      - echo "Updating version to {{.VERSION}}..."
+      
+      # Test build to make sure everything works
+      - echo "Testing build..."
+      - go build -o InstallArch-test
+      - |
+        VERSION_OUTPUT=$(./InstallArch-test version)
+        if [[ $VERSION_OUTPUT == *"{{.VERSION}}"* ]]; then
+          echo "✓ Version update successful: $VERSION_OUTPUT"
+        else
+          echo "✗ Version update failed. Expected {{.VERSION}}, got: $VERSION_OUTPUT"
+          exit 1
+        fi
+      - rm -f InstallArch-test
+      
+      # Stage and commit version change
+      - git add version
+      - git commit -m "bump version to v{{.VERSION}}"
+      - echo "✓ Version committed"
+      
+      # Build cross-platform binaries
+      - mkdir -p dist
+      - rm -rf dist/*
+      - echo "Building cross-platform binaries..."
+      # Build for Linux amd64
+      - GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o dist/InstallArch ./main.go
+      - echo "✓ binary built"
+      
+      # Create git tag and push
+      - git tag -a v{{.VERSION}} -m "Release v{{.VERSION}}"
+      - git push origin HEAD
+      - git push origin v{{.VERSION}}
+      - echo "✓ Git tag v{{.VERSION}} created and pushed"
+      
+      # Create GitHub release
+      - |
+        gh release create v{{.VERSION}} \
+          --title "Release v{{.VERSION}}" \
+          --notes "Release v{{.VERSION}}" \
+          dist/InstallArch
+      - echo "✓ GitHub release v{{.VERSION}} created with all binaries"
+      - echo "✓ Release complete!"
