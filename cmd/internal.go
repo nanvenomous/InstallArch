@@ -63,14 +63,14 @@ var configureGitCmd = &cobra.Command{
 	},
 }
 
-// installInternalCmd installs packages from internal_packages.txt
+// installInternalCmd installs packages from embedded internal_packages.txt
 var installInternalCmd = &cobra.Command{
 	Use:   "install-internal",
-	Short: "Install packages from rsrc/internal_packages.txt",
+	Short: "Install packages from embedded internal_packages.txt",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		data, err := os.ReadFile("./rsrc/internal_packages.txt")
+		data, err := Rsrc.ReadFile("rsrc/internal_packages.txt")
 		if err != nil {
-			return fmt.Errorf("failed to read internal_packages.txt: %w", err)
+			return fmt.Errorf("failed to read embedded internal_packages.txt: %w", err)
 		}
 
 		packages := strings.Fields(string(data))
@@ -258,9 +258,14 @@ var setClockCmd = &cobra.Command{
 			}
 		}
 
-		// Copy timezone dispatcher script
-		if err := execCommand("cp", "rsrc/09-timezone", "/etc/NetworkManager/dispatcher.d/"); err != nil {
-			fmt.Printf("Warning: failed to copy timezone script: %v\n", err)
+		// Write embedded timezone dispatcher script
+		timezoneScript, err := Rsrc.ReadFile("rsrc/09-timezone")
+		if err != nil {
+			fmt.Printf("Warning: failed to read embedded timezone script: %v\n", err)
+		} else {
+			if err := os.WriteFile("/etc/NetworkManager/dispatcher.d/09-timezone", timezoneScript, 0755); err != nil {
+				fmt.Printf("Warning: failed to write timezone script: %v\n", err)
+			}
 		}
 
 		fmt.Println("Clock configured successfully")

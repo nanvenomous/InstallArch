@@ -4,6 +4,7 @@ Copyright © 2025 nanvenomous mrgarelli@gmail.com
 package cmd
 
 import (
+	"embed"
 	"fmt"
 	"os"
 
@@ -14,6 +15,7 @@ var (
 	flagVersion bool
 
 	version string
+	Rsrc    embed.FS
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -36,8 +38,9 @@ Each command can be run individually if a step fails, allowing you to debug and 
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute(ver string) {
+func Execute(ver string, rsrc embed.FS) {
 	version = ver
+	Rsrc = rsrc
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)

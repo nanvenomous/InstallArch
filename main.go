@@ -4,7 +4,7 @@ Copyright © 2025 nanvenomous mrgarelli@gmail.com
 package main
 
 import (
-	_ "embed"
+	"embed"
 
 	"github.com/nanvenomous/InstallArch/cmd"
 )
@@ -12,6 +12,9 @@ import (
 //go:embed version
 var version string
 
+//go:embed rsrc
+var rsrc embed.FS
+
 func main() {
-	cmd.Execute(version)
+	cmd.Execute(version, rsrc)
 }

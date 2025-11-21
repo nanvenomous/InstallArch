@@ -148,12 +148,12 @@ var resetCmd = &cobra.Command{
 		_ = execCommand("swapoff", "-a").Run()
 
 		// Reset partition table
-		fdiskScript := `g
-w
-q
-`
+		fdiskScript, err := Rsrc.ReadFile("rsrc/fdisk_reset.txt")
+		if err != nil {
+			return fmt.Errorf("failed to read fdisk reset script: %w", err)
+		}
 		c := execCommand("fdisk", disk)
-		c.Stdin = strings.NewReader(fdiskScript)
+		c.Stdin = strings.NewReader(string(fdiskScript))
 		return c.Run()
 	},
 }
@@ -174,32 +174,11 @@ var partitionDiskCmd = &cobra.Command{
 			setAutoSwapOrDefault()
 		}
 
-		fdiskScript := fmt.Sprintf(`g
-n
-1
-
-+%sG
-t
-1
-n
-2
-
-+%sG
-t
-2
-19
-n
-3
-
-
-t
-3
-20
-p
-w
-q
-`, bootSize, swapSize)
-
+		fdiskTemplate, err := Rsrc.ReadFile("rsrc/fdisk_partition.txt")
+		if err != nil {
+			return fmt.Errorf("failed to read fdisk partition script: %w", err)
+		}
+		fdiskScript := fmt.Sprintf(string(fdiskTemplate), bootSize, swapSize)
 		c := execCommand("fdisk", disk)
 		c.Stdin = strings.NewReader(fdiskScript)
 		return c.Run()
@@ -291,12 +270,12 @@ var updateCmd = &cobra.Command{
 // installCmd represents the install command
 var installCmd = &cobra.Command{
 	Use:   "install",
-	Short: "Install packages from rsrc/external_packages.txt to /mnt",
+	Short: "Install packages from embedded external_packages.txt to /mnt",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// Read external packages file
-		data, err := os.ReadFile("./rsrc/external_packages.txt")
+		// Read external packages from embedded file
+		data, err := Rsrc.ReadFile("rsrc/external_packages.txt")
 		if err != nil {
-			return fmt.Errorf("failed to read external_packages.txt: %w", err)
+			return fmt.Errorf("failed to read embedded external_packages.txt: %w", err)
 		}
 
 		// Parse packages
@@ -317,10 +296,10 @@ var installCmd = &cobra.Command{
 	},
 }
 
-// copyBinaryCmd copies the InstallArch binary and rsrc directory to the new system
+// copyBinaryCmd copies the InstallArch binary to the new system
 var copyBinaryCmd = &cobra.Command{
 	Use:   "copy-binary",
-	Short: "Copy InstallArch binary and resources to /mnt/root",
+	Short: "Copy InstallArch binary to /mnt/root (resources are embedded)",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Get the current executable path
 		exePath, err := os.Executable()
@@ -338,12 +317,7 @@ var copyBinaryCmd = &cobra.Command{
 			return fmt.Errorf("failed to make binary executable: %w", err)
 		}
 
-		// Copy rsrc directory
-		if err := execCommand("cp", "-r", "./rsrc", "/mnt/root/").Run(); err != nil {
-			return fmt.Errorf("failed to copy rsrc directory: %w", err)
-		}
-
-		fmt.Println("Binary and resources copied to /mnt/root successfully")
+		fmt.Println("Binary copied to /mnt/root successfully (resources are embedded)")
 		return nil
 	},
 }
