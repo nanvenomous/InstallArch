@@ -287,7 +287,7 @@ var updateCmd = &cobra.Command{
 			return fmt.Errorf("failed to sync package databases: %w", err)
 		}
 
-		pacmanCmd = exec.Command("pacman", "-Sy", "archlinux-keyring")
+		pacmanCmd = exec.Command("pacman", "-Sy", "--noconfirm", "archlinux-keyring")
 		pacmanCmd.Stderr = os.Stderr
 		pacmanCmd.Stdout = os.Stdout
 		if err := pacmanCmd.Run(); err != nil {
