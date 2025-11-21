@@ -24,7 +24,6 @@ var (
 )
 
 // getRAMBasedSwapSize reads RAM from /proc/meminfo and calculates swap size
-// Logic: if RAM < 2GB, use 2*RAM; if RAM <= 8GB, use RAM; else use RAM/2
 // Returns swap size in GB (rounded up)
 func getRAMBasedSwapSize() (string, error) {
 	file, err := os.Open("/proc/meminfo")
@@ -52,14 +51,7 @@ func getRAMBasedSwapSize() (string, error) {
 			memGB := memKB / 1024 / 1024
 
 			// Calculate swap size based on RAM
-			var swapGB float64
-			if memGB < 2 {
-				swapGB = memGB * 2
-			} else if memGB <= 8 {
-				swapGB = memGB
-			} else {
-				swapGB = memGB / 2
-			}
+			var swapGB float64 = memGB
 
 			// Round up to nearest integer
 			swapGBInt := int(math.Ceil(swapGB))
