@@ -280,11 +280,17 @@ var updateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Update pacman and keyring",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := exec.Command("pacman", "-Syy").Run(); err != nil {
+		pacmanCmd := exec.Command("pacman", "-Syy")
+		pacmanCmd.Stderr = os.Stderr
+		pacmanCmd.Stdout = os.Stdout
+		if err := pacmanCmd.Run(); err != nil {
 			return fmt.Errorf("failed to sync package databases: %w", err)
 		}
 
-		if err := exec.Command("pacman", "-Sy", "archlinux-keyring").Run(); err != nil {
+		pacmanCmd = exec.Command("pacman", "-Sy", "archlinux-keyring")
+		pacmanCmd.Stderr = os.Stderr
+		pacmanCmd.Stdout = os.Stdout
+		if err := pacmanCmd.Run(); err != nil {
 			return fmt.Errorf("failed to update keyring: %w", err)
 		}
 
