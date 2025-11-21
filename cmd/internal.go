@@ -230,13 +230,27 @@ var setClockCmd = &cobra.Command{
 	Use:   "set-clock",
 	Short: "Configure time synchronization (default: America/Chicago)",
 	RunE: func(cmd *cobra.Command, args []string) error {
+
+		c := execCommand("timedatectl", "set-ntp", "true")
+		c.Stdin = os.Stdin
+		err := c.Run()
+		if err != nil {
+			return fmt.Errorf("failed to set-ntp: %v", err)
+		}
+
+		c = execCommand("timedatectl", "set-timezone", "America/Chicago")
+		c.Stdin = os.Stdin
+		err = c.Run()
+		if err != nil {
+			return fmt.Errorf("failed to set-timezone: %v", err)
+		}
+
 		commands := [][]string{
-			{"timedatectl", "set-ntp", "true"},
-			{"timedatectl", "set-timezone", "America/Chicago"},
+			// {"timedatectl", "set-ntp", "true"},
+			// {"timedatectl", "set-timezone", "America/Chicago"},
 			{"systemctl", "start", "systemd-timesyncd.service"},
 			{"systemctl", "enable", "systemd-timesyncd.service"},
 		}
-
 		for _, cmdArgs := range commands {
 			if err := execCommand(cmdArgs[0], cmdArgs[1:]...); err != nil {
 				return fmt.Errorf("failed to configure clock: %v", err)
