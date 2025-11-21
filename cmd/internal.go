@@ -102,6 +102,7 @@ var goInstallCmd = &cobra.Command{
 			"github.com/nanvenomous/where-to@latest",
 			"github.com/moson-mo/pacseek@latest",
 			"github.com/ChausseBenjamin/termpicker@latest",
+			"github.com/brianstrauch/solitaire-tui@latest",
 		}
 
 		for _, pkg := range packages {
