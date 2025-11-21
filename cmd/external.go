@@ -224,17 +224,26 @@ var formatCmd = &cobra.Command{
 		part := args[0]
 
 		// Format boot partition (FAT32)
-		if err := exec.Command("mkfs.fat", "-F32", "/dev/"+part+"1").Run(); err != nil {
+		c := exec.Command("mkfs.fat", "-F32", "/dev/"+part+"1")
+		c.Stdout = os.Stdout
+		c.Stderr = os.Stderr
+		if err := c.Run(); err != nil {
 			return fmt.Errorf("failed to format boot partition: %w", err)
 		}
 
 		// Format swap partition
-		if err := exec.Command("mkswap", "/dev/"+part+"2").Run(); err != nil {
+		c = exec.Command("mkswap", "/dev/"+part+"2")
+		c.Stdout = os.Stdout
+		c.Stderr = os.Stderr
+		if err := c.Run(); err != nil {
 			return fmt.Errorf("failed to format swap partition: %w", err)
 		}
 
 		// Format root partition (ext4)
-		if err := exec.Command("mkfs.ext4", "/dev/"+part+"3").Run(); err != nil {
+		c = exec.Command("mkfs.ext4", "/dev/"+part+"3")
+		c.Stdout = os.Stdout
+		c.Stderr = os.Stderr
+		if err := c.Run(); err != nil {
 			return fmt.Errorf("failed to format root partition: %w", err)
 		}
 
