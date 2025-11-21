@@ -318,7 +318,7 @@ var sysSetupCmd = &cobra.Command{
 		}
 
 		// Enable user pulseaudio
-		if err := execCommand("systemctl", "--user", "enable", "pulseaudio").Run(); err != nil {
+		if err := execCommand("systemctl", "--user", "enable", "pipewire.service").Run(); err != nil {
 			fmt.Printf("Warning: failed to enable pulseaudio: %v\n", err)
 		}
 
@@ -328,15 +328,15 @@ var sysSetupCmd = &cobra.Command{
 		}
 
 		// Set default browser
-		if err := execCommand("xdg-settings", "set", "default-web-browser", "org.qutebrowser.qutebrowser.desktop").Run(); err != nil {
-			fmt.Printf("Warning: failed to set default browser: %v\n", err)
-		}
+		// if err := execCommand("xdg-settings", "set", "default-web-browser", "org.qutebrowser.qutebrowser.desktop").Run(); err != nil {
+		// 	fmt.Printf("Warning: failed to set default browser: %v\n", err)
+		// }
 
 		// Set root password
 		fmt.Println("\nSet root password:")
 		c := execCommand("passwd")
 		c.Stdin = os.Stdin
-		if err := c.Run; err != nil {
+		if err := c.Run(); err != nil {
 			return fmt.Errorf("failed to set root password: %v", err)
 		}
 
