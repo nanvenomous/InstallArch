@@ -6,7 +6,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -21,10 +20,8 @@ var setupGitCmd = &cobra.Command{
 	Short: "Clone bare unix dotfiles repository",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		home := os.Getenv("HOME")
-		c := exec.Command("git", "clone", "--bare", "https://github.com/nanvenomous/unix.git", filepath.Join(home, ".unx"))
+		c := execCommand("git", "clone", "--bare", "https://github.com/nanvenomous/unix.git", filepath.Join(home, ".unx"))
 		c.Dir = home
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
 		return c.Run()
 	},
 }
@@ -35,10 +32,7 @@ var checkoutGitCmd = &cobra.Command{
 	Short: "Checkout dotfiles from bare repository",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		home := os.Getenv("HOME")
-		c := exec.Command("git", "--git-dir="+filepath.Join(home, ".unx")+"/", "--work-tree="+home, "checkout")
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
-		return c.Run()
+		return execCommand("git", "--git-dir="+filepath.Join(home, ".unx")+"/", "--work-tree="+home, "checkout").Run()
 	},
 }
 
@@ -59,10 +53,7 @@ var configureGitCmd = &cobra.Command{
 		}
 
 		for _, cmdArgs := range commands {
-			c := exec.Command(cmdArgs[0], cmdArgs[1:]...)
-			c.Stdout = os.Stdout
-			c.Stderr = os.Stderr
-			if err := c.Run(); err != nil {
+			if err := execCommand(cmdArgs[0], cmdArgs[1:]...).Run(); err != nil {
 				// Continue on error for --get command
 				fmt.Printf("Warning: %v\n", err)
 			}
@@ -88,11 +79,8 @@ var installInternalCmd = &cobra.Command{
 		}
 
 		cmdArgs := append([]string{"-Sy"}, packages...)
-		c := exec.Command("pacman", cmdArgs...)
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
+		c := execCommand("pacman", cmdArgs...)
 		c.Stdin = os.Stdin
-
 		if err := c.Run(); err != nil {
 			return fmt.Errorf("failed to install packages: %w", err)
 		}
@@ -118,10 +106,7 @@ var goInstallCmd = &cobra.Command{
 
 		for _, pkg := range packages {
 			fmt.Printf("Installing %s...\n", pkg)
-			c := exec.Command("go", "install", pkg)
-			c.Stdout = os.Stdout
-			c.Stderr = os.Stderr
-			if err := c.Run(); err != nil {
+			if err := execCommand("go", "install", pkg).Run(); err != nil {
 				return fmt.Errorf("failed to install %s: %w", pkg, err)
 			}
 		}
@@ -144,12 +129,9 @@ var npmInstallCmd = &cobra.Command{
 			"@tailwindcss/language-server",
 		}
 
-		cmdArgs := append([]string{"i", "-g"}, packages...)
-		c := exec.Command("sudo", append([]string{"npm"}, cmdArgs...)...)
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
+		cmdArgs := append([]string{"npm", "i", "-g"}, packages...)
+		c := execCommand("sudo", cmdArgs...)
 		c.Stdin = os.Stdin
-
 		if err := c.Run(); err != nil {
 			return fmt.Errorf("failed to install npm packages: %w", err)
 		}
@@ -168,42 +150,38 @@ var gitInstallCmd = &cobra.Command{
 
 		// Clone zsh-system-clipboard
 		scriptsDir := filepath.Join(home, ".scripts")
-		os.MkdirAll(scriptsDir, 0755)
-		c := exec.Command("git", "clone", "https://github.com/kutsan/zsh-system-clipboard.git")
+		if err := os.MkdirAll(scriptsDir, 0755); err != nil {
+			return fmt.Errorf("failed to create .scripts directory: %w", err)
+		}
+		c := execCommand("git", "clone", "https://github.com/kutsan/zsh-system-clipboard.git")
 		c.Dir = scriptsDir
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
-		if err := c.Run(); err != nil {
+		err := c.Run()
+		if err != nil {
 			return fmt.Errorf("failed to clone zsh-system-clipboard: %w", err)
 		}
 
 		// Create projects directory and clone yay
 		projectsDir := filepath.Join(home, "projects")
-		os.MkdirAll(projectsDir, 0755)
+		if err := os.MkdirAll(projectsDir, 0755); err != nil {
+			return fmt.Errorf("failed to create projects directory: %w", err)
+		}
 
 		yayDir := filepath.Join(projectsDir, "yay")
-		c = exec.Command("git", "clone", "https://aur.archlinux.org/yay.git")
+		c = execCommand("git", "clone", "https://aur.archlinux.org/yay.git")
 		c.Dir = projectsDir
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
 		if err := c.Run(); err != nil {
 			return fmt.Errorf("failed to clone yay: %w", err)
 		}
 
 		// Build and install yay
-		c = exec.Command("makepkg", "-si")
+		c = execCommand("makepkg", "-si")
 		c.Dir = yayDir
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
-		c.Stdin = os.Stdin
 		if err := c.Run(); err != nil {
 			return fmt.Errorf("failed to build yay: %w", err)
 		}
 
 		// Install bun
-		c = exec.Command("bash", "-c", "curl -fsSL https://bun.sh/install | bash")
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
+		c = execCommand("bash", "-c", "curl -fsSL https://bun.sh/install | bash")
 		c.Stdin = os.Stdin
 		if err := c.Run(); err != nil {
 			return fmt.Errorf("failed to install bun: %w", err)
@@ -219,9 +197,7 @@ var yayInstallCmd = &cobra.Command{
 	Use:   "yay-install",
 	Short: "Install AUR packages (font-symbola, enpass-bin)",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c := exec.Command("yay", "-S", "font-symbola", "enpass-bin")
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
+		c := execCommand("yay", "-S", "font-symbola", "enpass-bin")
 		c.Stdin = os.Stdin
 		return c.Run()
 	},
@@ -233,17 +209,13 @@ var amdGPUCmd = &cobra.Command{
 	Short: "Install AMD GPU drivers and ROCm packages",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		packages := [][]string{
-			{"sudo", "pacman", "-S", "ollama-rocm"},
-			{"sudo", "pacman", "-S", "xf86-video-amdgpu"},
-			{"sudo", "pacman", "-S", "rocm-opencl-sdk", "rocm-hip-sdk"},
+			{"pacman", "-S", "--noconfirm", "ollama-rocm"},
+			{"pacman", "-S", "--noconfirm", "xf86-video-amdgpu"},
+			{"pacman", "-S", "--noconfirm", "rocm-opencl-sdk", "rocm-hip-sdk"},
 		}
 
 		for _, cmdArgs := range packages {
-			c := exec.Command(cmdArgs[0], cmdArgs[1:]...)
-			c.Stdout = os.Stdout
-			c.Stderr = os.Stderr
-			c.Stdin = os.Stdin
-			if err := c.Run(); err != nil {
+			if err := execCommand(cmdArgs[0], cmdArgs[1:]...); err != nil {
 				return fmt.Errorf("failed to install AMD packages: %w", err)
 			}
 		}
@@ -261,21 +233,18 @@ var setClockCmd = &cobra.Command{
 		commands := [][]string{
 			{"timedatectl", "set-ntp", "true"},
 			{"timedatectl", "set-timezone", "America/Chicago"},
-			{"sudo", "systemctl", "start", "systemd-timesyncd.service"},
-			{"sudo", "systemctl", "enable", "systemd-timesyncd.service"},
+			{"systemctl", "start", "systemd-timesyncd.service"},
+			{"systemctl", "enable", "systemd-timesyncd.service"},
 		}
 
 		for _, cmdArgs := range commands {
-			c := exec.Command(cmdArgs[0], cmdArgs[1:]...)
-			c.Stdout = os.Stdout
-			c.Stderr = os.Stderr
-			if err := c.Run(); err != nil {
-				return fmt.Errorf("failed to configure clock: %w", err)
+			if err := execCommand(cmdArgs[0], cmdArgs[1:]...); err != nil {
+				return fmt.Errorf("failed to configure clock: %v", err)
 			}
 		}
 
 		// Copy timezone dispatcher script
-		if err := exec.Command("cp", "rsrc/09-timezone", "/etc/NetworkManager/dispatcher.d/").Run(); err != nil {
+		if err := execCommand("cp", "rsrc/09-timezone", "/etc/NetworkManager/dispatcher.d/"); err != nil {
 			fmt.Printf("Warning: failed to copy timezone script: %v\n", err)
 		}
 
@@ -306,7 +275,7 @@ var sysSetupCmd = &cobra.Command{
 		}
 
 		// Set hardware clock
-		if err := exec.Command("hwclock", "--systohc").Run(); err != nil {
+		if err := execCommand("hwclock", "--systohc").Run(); err != nil {
 			return fmt.Errorf("failed to set hardware clock: %w", err)
 		}
 
@@ -316,7 +285,7 @@ var sysSetupCmd = &cobra.Command{
 		}
 
 		// Generate locale
-		if err := exec.Command("locale-gen").Run(); err != nil {
+		if err := execCommand("locale-gen").Run(); err != nil {
 			return fmt.Errorf("failed to generate locale: %w", err)
 		}
 
@@ -343,34 +312,32 @@ var sysSetupCmd = &cobra.Command{
 		}
 
 		for _, service := range services {
-			if err := exec.Command("systemctl", "enable", service).Run(); err != nil {
+			if err := execCommand("systemctl", "enable", service).Run(); err != nil {
 				fmt.Printf("Warning: failed to enable %s: %v\n", service, err)
 			}
 		}
 
 		// Enable user pulseaudio
-		if err := exec.Command("systemctl", "--user", "enable", "pulseaudio").Run(); err != nil {
+		if err := execCommand("systemctl", "--user", "enable", "pulseaudio").Run(); err != nil {
 			fmt.Printf("Warning: failed to enable pulseaudio: %v\n", err)
 		}
 
 		// Unmute audio
-		if err := exec.Command("amixer", "sset", "Master", "unmute").Run(); err != nil {
+		if err := execCommand("amixer", "sset", "Master", "unmute").Run(); err != nil {
 			fmt.Printf("Warning: failed to unmute audio: %v\n", err)
 		}
 
 		// Set default browser
-		if err := exec.Command("xdg-settings", "set", "default-web-browser", "org.qutebrowser.qutebrowser.desktop").Run(); err != nil {
+		if err := execCommand("xdg-settings", "set", "default-web-browser", "org.qutebrowser.qutebrowser.desktop").Run(); err != nil {
 			fmt.Printf("Warning: failed to set default browser: %v\n", err)
 		}
 
 		// Set root password
 		fmt.Println("\nSet root password:")
-		c := exec.Command("passwd")
+		c := execCommand("passwd")
 		c.Stdin = os.Stdin
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
-		if err := c.Run(); err != nil {
-			return fmt.Errorf("failed to set root password: %w", err)
+		if err := c.Run; err != nil {
+			return fmt.Errorf("failed to set root password: %v", err)
 		}
 
 		fmt.Println("System setup completed successfully")
@@ -388,27 +355,25 @@ var createUserCmd = &cobra.Command{
 		}
 
 		// Create user
-		if err := exec.Command("useradd", "-m", "-g", "users", "-G", "wheel", username).Run(); err != nil {
+		if err := execCommand("useradd", "-m", "-g", "users", "-G", "wheel", username).Run(); err != nil {
 			return fmt.Errorf("failed to create user: %w", err)
 		}
 
 		// Add to wheel group (redundant but matches original)
-		if err := exec.Command("usermod", "-a", "-G", "wheel", username).Run(); err != nil {
+		if err := execCommand("usermod", "-a", "-G", "wheel", username).Run(); err != nil {
 			return fmt.Errorf("failed to add user to wheel: %w", err)
 		}
 
 		// Set password
 		fmt.Printf("\nSet password for %s:\n", username)
-		c := exec.Command("passwd", username)
+		c := execCommand("passwd", username)
 		c.Stdin = os.Stdin
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
 		if err := c.Run(); err != nil {
 			return fmt.Errorf("failed to set password: %w", err)
 		}
 
 		// Change shell to zsh (note: original has hardcoded 'gin')
-		if err := exec.Command("chsh", "-s", "/bin/zsh", username).Run(); err != nil {
+		if err := execCommand("chsh", "-s", "/bin/zsh", username).Run(); err != nil {
 			return fmt.Errorf("failed to change shell: %w", err)
 		}
 
@@ -422,10 +387,8 @@ var configUserCmd = &cobra.Command{
 	Use:   "config-user",
 	Short: "Edit sudoers file to configure wheel group",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c := exec.Command("nvim", "-c", "/wheel", "/etc/sudoers")
+		c := execCommand("nvim", "-c", "/wheel", "/etc/sudoers")
 		c.Stdin = os.Stdin
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
 		return c.Run()
 	},
 }
@@ -435,11 +398,11 @@ var grubSetupCmd = &cobra.Command{
 	Use:   "grub-setup",
 	Short: "Install and configure GRUB bootloader",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := exec.Command("grub-install", "--target=x86_64-efi", "--efi-directory=/boot/efi").Run(); err != nil {
+		if err := execCommand("grub-install", "--target=x86_64-efi", "--efi-directory=/boot/efi").Run(); err != nil {
 			return fmt.Errorf("failed to install grub: %w", err)
 		}
 
-		if err := exec.Command("grub-mkconfig", "-o", "/boot/grub/grub.cfg").Run(); err != nil {
+		if err := execCommand("grub-mkconfig", "-o", "/boot/grub/grub.cfg").Run(); err != nil {
 			return fmt.Errorf("failed to generate grub config: %w", err)
 		}
 
@@ -453,10 +416,7 @@ var bootOrderCmd = &cobra.Command{
 	Use:   "boot-order",
 	Short: "Display EFI boot order",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c := exec.Command("efibootmgr", "-v")
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
-		if err := c.Run(); err != nil {
+		if err := execCommand("efibootmgr", "-v").Run(); err != nil {
 			return fmt.Errorf("failed to show boot order: %w", err)
 		}
 
@@ -471,76 +431,13 @@ var sshKeyCmd = &cobra.Command{
 	Use:   "ssh-key",
 	Short: "Generate SSH key",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c := exec.Command("ssh-keygen")
+		c := execCommand("ssh-keygen")
 		c.Stdin = os.Stdin
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
 		if err := c.Run(); err != nil {
 			return fmt.Errorf("failed to generate SSH key: %w", err)
 		}
 
 		fmt.Println("Now add the key to your GitHub account")
-		return nil
-	},
-}
-
-// fromSourceCmd builds packages from source
-var fromSourceCmd = &cobra.Command{
-	Use:   "from-source",
-	Short: "Build where-to and e from source",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		home := os.Getenv("HOME")
-		projectsDir := filepath.Join(home, "projects")
-
-		// Build where-to
-		whereToDir := filepath.Join(projectsDir, "where-to")
-		c := exec.Command("git", "clone", "https://github.com/nanvenomous/where-to.git")
-		c.Dir = projectsDir
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
-		if err := c.Run(); err != nil {
-			return fmt.Errorf("failed to clone where-to: %w", err)
-		}
-
-		makeCommands := [][]string{
-			{"make"},
-			{"sudo", "make", "install"},
-			{"sudo", "make", "zsh-completions"},
-		}
-
-		for _, cmdArgs := range makeCommands {
-			c = exec.Command(cmdArgs[0], cmdArgs[1:]...)
-			c.Dir = whereToDir
-			c.Stdout = os.Stdout
-			c.Stderr = os.Stderr
-			c.Stdin = os.Stdin
-			if err := c.Run(); err != nil {
-				return fmt.Errorf("failed to build where-to: %w", err)
-			}
-		}
-
-		// Build e
-		eDir := filepath.Join(projectsDir, "e")
-		c = exec.Command("git", "clone", "git@github.com:nanvenomous/e.git")
-		c.Dir = projectsDir
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
-		if err := c.Run(); err != nil {
-			return fmt.Errorf("failed to clone e: %w", err)
-		}
-
-		for _, cmdArgs := range [][]string{{"make"}, {"sudo", "make", "install"}} {
-			c = exec.Command(cmdArgs[0], cmdArgs[1:]...)
-			c.Dir = eDir
-			c.Stdout = os.Stdout
-			c.Stderr = os.Stderr
-			c.Stdin = os.Stdin
-			if err := c.Run(); err != nil {
-				return fmt.Errorf("failed to build e: %w", err)
-			}
-		}
-
-		fmt.Println("Source packages built successfully")
 		return nil
 	},
 }
@@ -650,6 +547,5 @@ func init() {
 	rootCmd.AddCommand(grubSetupCmd)
 	rootCmd.AddCommand(bootOrderCmd)
 	rootCmd.AddCommand(sshKeyCmd)
-	rootCmd.AddCommand(fromSourceCmd)
 	rootCmd.AddCommand(runAllInternalCmd)
 }

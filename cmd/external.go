@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"math"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 
@@ -93,16 +92,15 @@ var checkInputsCmd = &cobra.Command{
 	Short: "Check default inputs before run-all",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if _, err := os.Stat("/sys/firmware/efi/efivars"); err != nil {
-			fmt.Println(" This is not an EFI system. This guide does not apply :(")
+			fmt.Println(" This is not an EFI system. This guide does not apply :(")
 		} else {
 			fmt.Println("󰄬 This is an EFI system.")
 		}
 
 		setAutoSwapOrDefault()
 
-		c := exec.Command("ping", "-q", "-c", "1", "google.com")
-		if err := c.Run(); err != nil {
-			fmt.Println(" There is no internet")
+		if err := execCommand("ping", "-q", "-c", "1", "google.com").Run(); err != nil {
+			fmt.Println(" There is no internet")
 		}
 		fmt.Println("󰄬 There is internet! Skip setWifi command.")
 
@@ -115,8 +113,7 @@ var checkInternetCmd = &cobra.Command{
 	Use:   "check-internet",
 	Short: "Check if there is internet connectivity",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c := exec.Command("ping", "-q", "-c", "1", "google.com")
-		if err := c.Run(); err != nil {
+		if err := execCommand("ping", "-q", "-c", "1", "google.com").Run(); err != nil {
 			return fmt.Errorf("There is no internet")
 		}
 		fmt.Println("There is internet! Skip setWifi command.")
@@ -129,10 +126,8 @@ var setWifiCmd = &cobra.Command{
 	Use:   "set-wifi",
 	Short: "Launch iwctl to configure WiFi",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c := exec.Command("iwctl")
+		c := execCommand("iwctl")
 		c.Stdin = os.Stdin
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
 		return c.Run()
 	},
 }
@@ -148,19 +143,17 @@ var resetCmd = &cobra.Command{
 
 		fmt.Printf("disk to reformat: %s\n", disk)
 
-		// Unmount and turn off swap
-		exec.Command("umount", "-R", "/mnt").Run()
-		exec.Command("swapoff", "-a").Run()
+		// Unmount and turn off swap (ignore errors as they may not be mounted)
+		_ = execCommand("umount", "-R", "/mnt").Run()
+		_ = execCommand("swapoff", "-a").Run()
 
 		// Reset partition table
 		fdiskScript := `g
 w
 q
 `
-		c := exec.Command("fdisk", disk)
+		c := execCommand("fdisk", disk)
 		c.Stdin = strings.NewReader(fdiskScript)
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
 		return c.Run()
 	},
 }
@@ -207,10 +200,8 @@ w
 q
 `, bootSize, swapSize)
 
-		c := exec.Command("fdisk", disk)
+		c := execCommand("fdisk", disk)
 		c.Stdin = strings.NewReader(fdiskScript)
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
 		return c.Run()
 	},
 }
@@ -224,26 +215,17 @@ var formatCmd = &cobra.Command{
 		part := args[0]
 
 		// Format boot partition (FAT32)
-		c := exec.Command("mkfs.fat", "-F32", "/dev/"+part+"1")
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
-		if err := c.Run(); err != nil {
+		if err := execCommand("mkfs.fat", "-F32", "/dev/"+part+"1").Run(); err != nil {
 			return fmt.Errorf("failed to format boot partition: %w", err)
 		}
 
 		// Format swap partition
-		c = exec.Command("mkswap", "/dev/"+part+"2")
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
-		if err := c.Run(); err != nil {
+		if err := execCommand("mkswap", "/dev/"+part+"2").Run(); err != nil {
 			return fmt.Errorf("failed to format swap partition: %w", err)
 		}
 
 		// Format root partition (ext4)
-		c = exec.Command("mkfs.ext4", "/dev/"+part+"3")
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
-		if err := c.Run(); err != nil {
+		if err := execCommand("mkfs.ext4", "/dev/"+part+"3").Run(); err != nil {
 			return fmt.Errorf("failed to format root partition: %w", err)
 		}
 
@@ -261,21 +243,25 @@ var mountingCmd = &cobra.Command{
 		part := args[0]
 
 		// Mount root partition
-		if err := exec.Command("mount", "/dev/"+part+"3", "/mnt").Run(); err != nil {
+		if err := execCommand("mount", "/dev/"+part+"3", "/mnt").Run(); err != nil {
 			return fmt.Errorf("failed to mount root partition: %w", err)
 		}
 
 		// Create and mount boot/efi
-		os.MkdirAll("/mnt/boot/efi", 0755)
-		if err := exec.Command("mount", "/dev/"+part+"1", "/mnt/boot/efi").Run(); err != nil {
+		if err := os.MkdirAll("/mnt/boot/efi", 0755); err != nil {
+			return fmt.Errorf("failed to create boot/efi directory: %w", err)
+		}
+		if err := execCommand("mount", "/dev/"+part+"1", "/mnt/boot/efi").Run(); err != nil {
 			return fmt.Errorf("failed to mount boot partition: %w", err)
 		}
 
 		// Create home directory
-		os.MkdirAll("/mnt/home", 0755)
+		if err := os.MkdirAll("/mnt/home", 0755); err != nil {
+			return fmt.Errorf("failed to create home directory: %w", err)
+		}
 
 		// Enable swap
-		if err := exec.Command("swapon", "/dev/"+part+"2").Run(); err != nil {
+		if err := execCommand("swapon", "/dev/"+part+"2").Run(); err != nil {
 			return fmt.Errorf("failed to enable swap: %w", err)
 		}
 
@@ -289,17 +275,11 @@ var updateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Update pacman and keyring",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		pacmanCmd := exec.Command("pacman", "-Syy")
-		pacmanCmd.Stderr = os.Stderr
-		pacmanCmd.Stdout = os.Stdout
-		if err := pacmanCmd.Run(); err != nil {
+		if err := execCommand("pacman", "-Syy").Run(); err != nil {
 			return fmt.Errorf("failed to sync package databases: %w", err)
 		}
 
-		pacmanCmd = exec.Command("pacman", "-Sy", "--noconfirm", "archlinux-keyring")
-		pacmanCmd.Stderr = os.Stderr
-		pacmanCmd.Stdout = os.Stdout
-		if err := pacmanCmd.Run(); err != nil {
+		if err := execCommand("pacman", "-Sy", "--noconfirm", "archlinux-keyring").Run(); err != nil {
 			return fmt.Errorf("failed to update keyring: %w", err)
 		}
 
@@ -327,11 +307,7 @@ var installCmd = &cobra.Command{
 
 		// Build pacstrap command
 		cmdArgs := append([]string{"/mnt"}, packages...)
-		c := exec.Command("pacstrap", cmdArgs...)
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
-		c.Stdin = os.Stdin
-
+		c := execCommand("pacstrap", cmdArgs...)
 		if err := c.Run(); err != nil {
 			return fmt.Errorf("failed to run pacstrap: %w", err)
 		}
@@ -353,7 +329,7 @@ var copyBinaryCmd = &cobra.Command{
 		}
 
 		// Copy binary to /mnt/root
-		if err := exec.Command("cp", exePath, "/mnt/root/InstallArch").Run(); err != nil {
+		if err := execCommand("cp", exePath, "/mnt/root/InstallArch").Run(); err != nil {
 			return fmt.Errorf("failed to copy binary: %w", err)
 		}
 
@@ -363,7 +339,7 @@ var copyBinaryCmd = &cobra.Command{
 		}
 
 		// Copy rsrc directory
-		if err := exec.Command("cp", "-r", "./rsrc", "/mnt/root/").Run(); err != nil {
+		if err := execCommand("cp", "-r", "./rsrc", "/mnt/root/").Run(); err != nil {
 			return fmt.Errorf("failed to copy rsrc directory: %w", err)
 		}
 
@@ -385,10 +361,8 @@ var tabCmd = &cobra.Command{
 		defer f.Close()
 
 		// Run genfstab
-		c := exec.Command("genfstab", "-U", "/mnt")
+		c := execCommand("genfstab", "-U", "/mnt")
 		c.Stdout = f
-		c.Stderr = os.Stderr
-
 		if err := c.Run(); err != nil {
 			return fmt.Errorf("failed to generate fstab: %w", err)
 		}
@@ -403,10 +377,8 @@ var enterSysCmd = &cobra.Command{
 	Use:   "enter-sys",
 	Short: "Chroot into the new system",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c := exec.Command("arch-chroot", "/mnt")
+		c := execCommand("arch-chroot", "/mnt")
 		c.Stdin = os.Stdin
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
 		return c.Run()
 	},
 }
@@ -416,11 +388,11 @@ var prepareRebootCmd = &cobra.Command{
 	Use:   "prepare-reboot",
 	Short: "Unmount partitions and disable swap before reboot",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := exec.Command("umount", "-R", "/mnt").Run(); err != nil {
+		if err := execCommand("umount", "-R", "/mnt").Run(); err != nil {
 			fmt.Printf("Warning: failed to unmount: %v\n", err)
 		}
 
-		if err := exec.Command("swapoff", "-a").Run(); err != nil {
+		if err := execCommand("swapoff", "-a").Run(); err != nil {
 			fmt.Printf("Warning: failed to disable swap: %v\n", err)
 		}
 
@@ -519,11 +491,8 @@ Optional flags: --hostname (default: fairytail), --city (default: Chicago), --bo
 		internalCmd := fmt.Sprintf("cd /root && ./InstallArch run-all-internal --username=%s --hostname=%s --city=%s",
 			username, hostname, city)
 
-		c := exec.Command("arch-chroot", "/mnt", "bash", "-c", internalCmd)
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
+		c := execCommand("arch-chroot", "/mnt", "bash", "-c", internalCmd)
 		c.Stdin = os.Stdin
-
 		if err := c.Run(); err != nil {
 			return fmt.Errorf("internal installation failed: %w\nYou can manually enter the system with 'InstallArch enter-sys' and run:\n  cd /root && ./InstallArch run-all-internal --username=%s --hostname=%s --city=%s", err, username, hostname, city)
 		}
