@@ -7,6 +7,11 @@ tasks:
     desc: "build binary"
     cmds:
       - go build 
+
+  zsh-completion:
+    desk: "add zsh completions"
+    cmds:
+      - ./InstallArch completion zsh > _InstallArch
   
   release:
     desc: "<1.2.3> bump version and create GitHub release for all platforms"
