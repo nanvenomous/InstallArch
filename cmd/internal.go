@@ -90,19 +90,27 @@ var installInternalCmd = &cobra.Command{
 	},
 }
 
-// goInstallCmd installs Go packages
+// goInstallCmd installs Go packages from embedded go_packages.txt
 var goInstallCmd = &cobra.Command{
 	Use:   "go-install",
-	Short: "Install Go development tools",
+	Short: "Install Go development tools from embedded go_packages.txt",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		packages := []string{
-			"github.com/go-task/task/v3/cmd/task@latest",
-			"github.com/a-h/templ/cmd/templ@latest",
-			"github.com/nanvenomous/e@latest",
-			"github.com/nanvenomous/where-to@latest",
-			"github.com/moson-mo/pacseek@latest",
-			"github.com/ChausseBenjamin/termpicker@latest",
-			"github.com/brianstrauch/solitaire-tui@latest",
+		data, err := Rsrc.ReadFile("rsrc/go_packages.txt")
+		if err != nil {
+			return fmt.Errorf("failed to read embedded go_packages.txt: %w", err)
+		}
+
+		lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+		packages := make([]string, 0, len(lines))
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if line != "" && !strings.HasPrefix(line, "#") {
+				packages = append(packages, line)
+			}
+		}
+
+		if len(packages) == 0 {
+			return fmt.Errorf("no packages found in go_packages.txt")
 		}
 
 		for _, pkg := range packages {
