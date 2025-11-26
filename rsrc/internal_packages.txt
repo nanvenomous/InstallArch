@@ -60,3 +60,4 @@ duf
 ttf-jetbrains-mono-nerd
 fzf
 htop
+github-cli
