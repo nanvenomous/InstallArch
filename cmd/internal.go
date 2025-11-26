@@ -137,6 +137,18 @@ var npmInstallCmd = &cobra.Command{
 			return fmt.Errorf("failed to install npm packages: %w", err)
 		}
 
+		// bun install
+		packages = []string{
+			"@openai/codex",
+			"opencode-ai",
+		}
+		cmdArgs = append([]string{"bun", "add", "-g"}, packages...)
+		c = execCommand("sudo", cmdArgs...)
+		c.Stdin = os.Stdin
+		if err := c.Run(); err != nil {
+			return fmt.Errorf("failed to install npm packages: %w", err)
+		}
+
 		fmt.Println("npm packages installed successfully")
 		return nil
 	},
