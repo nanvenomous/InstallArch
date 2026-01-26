@@ -7,4 +7,4 @@ github.com/ChausseBenjamin/termpicker@latest
 github.com/brianstrauch/solitaire-tui@latest
 github.com/nanvenomous/alarm@latest
 github.com/charmbracelet/crush@latest
-
+github.com/darkhz/bluetuith@latest
