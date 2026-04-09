@@ -23,6 +23,8 @@ chmod +x InstallArch
 - [Framework_Laptop_13](https://wiki.archlinux.org/title/Framework_Laptop_13)
   - [framework-system](https://archlinux.org/packages/extra/x86_64/framework-system/)
   - [docs](https://github.com/FrameworkComputer/linux-docs/tree/main/framework12)
+  - [fwupd](https://wiki.archlinux.org/title/Fwupd) for firmware updates
+  - [thermald](https://wiki.archlinux.org/title/CPU_frequency_scaling)
 
 screen rotation
 

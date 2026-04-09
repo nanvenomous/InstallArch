@@ -65,3 +65,5 @@ github-cli
 mpv
 yt-dlp
 clangd
+tree-sitter
+tree-sitter-cli
