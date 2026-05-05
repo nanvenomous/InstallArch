@@ -15,6 +15,11 @@ tasks:
       - task: verify
       - task: bake
 
+  deps:
+    desc: "install required packages via pacman"
+    cmds:
+      - sudo pacman -S --needed xorriso squashfs-tools curl gnupg archinstall
+
   download:
     desc: "download the latest arch linux iso and signature from mirrors.kernel.org"
     cmds:
