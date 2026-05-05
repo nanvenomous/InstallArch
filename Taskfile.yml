@@ -1,69 +1,68 @@
 # https://taskfile.dev
+# requires: xorriso, squashfs-tools, curl, gnupg
 
 version: '3'
 
+vars:
+  MIRROR: "https://mirrors.kernel.org/archlinux/iso/latest"
+  ISO: "iso/arch.iso"
+
 tasks:
   default:
-    desc: "build binary"
+    desc: "download, verify, and bake the arch iso"
     cmds:
-      - go build 
+      - task: download
+      - task: verify
+      - task: bake
 
-  zsh-completion:
-    desk: "add zsh completions"
+  download:
+    desc: "download the latest arch linux iso and signature from mirrors.kernel.org"
     cmds:
-      - ./InstallArch completion zsh > _InstallArch
-  
-  release:
-    desc: "<1.2.3> bump version and create GitHub release for all platforms"
+      - mkdir -p iso
+      - curl -L --progress-bar -o "{{.ISO}}" "{{.MIRROR}}/archlinux-x86_64.iso"
+      - curl -L -o "{{.ISO}}.sig" "{{.MIRROR}}/archlinux-x86_64.iso.sig"
+
+  verify:
+    desc: "verify gpg signature of the downloaded iso"
+    cmds:
+      - gpg --keyserver-options auto-key-retrieve --verify "{{.ISO}}.sig" "{{.ISO}}"
+
+  bake:
+    desc: "inject user_configuration.json and setup_dotfiles.sh into the iso squashfs"
+    cmds:
+      - sudo bash rsrc/bake.sh
+
+  usb:
+    desc: "<device> write arch-custom.iso to a usb drive (e.g. task usb -- /dev/sdb)"
     vars:
-      VERSION: '{{.CLI_ARGS}}'
+      DEVICE: '{{.CLI_ARGS}}'
     preconditions:
-      - sh: test -n "{{.VERSION}}"
-        msg: "Version is required. Usage: task release -- 1.0.8"
-      - sh: echo "{{.VERSION}}" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$'
-        msg: "Version must be in semver format (e.g., 1.0.8)"
+      - sh: test -n "{{.DEVICE}}"
+        msg: "device required. usage: task usb -- /dev/sdX"
+      - sh: test -f iso/arch-custom.iso
+        msg: "arch-custom.iso not found — run: task bake"
+      - sh: test -b "{{.DEVICE}}"
+        msg: "{{.DEVICE}} is not a block device"
     cmds:
-      # Update version file
-      - echo "{{.VERSION}}" > version
-      - echo "Updating version to {{.VERSION}}..."
-      
-      # Test build to make sure everything works
-      - echo "Testing build..."
-      - go build -o InstallArch-test
-      - |
-        VERSION_OUTPUT=$(./InstallArch-test --version)
-        if [[ $VERSION_OUTPUT == *"{{.VERSION}}"* ]]; then
-          echo "✓ Version update successful: $VERSION_OUTPUT"
-        else
-          echo "✗ Version update failed. Expected {{.VERSION}}, got: $VERSION_OUTPUT"
-          exit 1
-        fi
-      - rm -f InstallArch-test
-      
-      # Stage and commit version change
-      - git add version
-      - git commit -m "bump version to v{{.VERSION}}"
-      - echo "✓ Version committed"
-      
-      # Build cross-platform binaries
-      - mkdir -p dist
-      - rm -rf dist/*
-      - echo "Building cross-platform binaries..."
-      # Build for Linux amd64
-      - GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o dist/InstallArch ./main.go
-      - echo "✓ binary built"
-      
-      # Create git tag and push
-      - git tag -a v{{.VERSION}} -m "Release v{{.VERSION}}"
-      - git push origin HEAD
-      - git push origin v{{.VERSION}}
-      - echo "✓ Git tag v{{.VERSION}} created and pushed"
-      
-      # Create GitHub release
-      - |
-        gh release create v{{.VERSION}} \
-          --title "Release v{{.VERSION}}" \
-          --notes "Release v{{.VERSION}}" \
-          dist/InstallArch
-      - echo "✓ GitHub release v{{.VERSION}} created with all binaries"
-      - echo "✓ Release complete!"
+      - lsblk "{{.DEVICE}}"
+      - echo "writing iso/arch-custom.iso to {{.DEVICE}} in 5 seconds — ctrl-c to abort"
+      - sleep 5
+      - sudo dd if=iso/arch-custom.iso of={{.DEVICE}} bs=4M status=progress oflag=sync
+
+  config:
+    desc: "edit user_configuration.json using the archinstall TUI"
+    cmds:
+      - sudo archinstall --config user_configuration.json
+      # - |
+      #   if sudo test -f /var/log/archinstall/user_configuration.json; then
+      #     sudo cp /var/log/archinstall/user_configuration.json user_configuration.json
+      #     sudo chown "$(id -un):$(id -gn)" user_configuration.json
+      #     echo "config saved to user_configuration.json"
+      #   else
+      #     echo "no saved config found — use 'Save configuration' in the archinstall TUI before quitting"
+      #   fi
+
+  clean:
+    desc: "remove downloaded iso and work directory"
+    cmds:
+      - sudo rm -rf iso/ work/
