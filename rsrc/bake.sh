@@ -30,6 +30,7 @@ echo "==> Updating checksum..."
 (cd "${WORK}" && sha512sum airootfs.sfs > airootfs.sfs.sha512)
 
 echo "==> Baking into ISO (preserving boot structure)..."
+rm -f "${ISO_OUT}"
 xorriso \
   -indev "${ISO_IN}" \
   -outdev "${ISO_OUT}" \
