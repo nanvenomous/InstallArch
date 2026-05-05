@@ -67,6 +67,11 @@ tasks:
       #     echo "no saved config found — use 'Save configuration' in the archinstall TUI before quitting"
       #   fi
 
+  clean-work:
+    desc: "remove work directory, keeping downloaded isos"
+    cmds:
+      - sudo rm -rf work/
+
   clean:
     desc: "remove downloaded iso and work directory"
     cmds:
